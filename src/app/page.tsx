@@ -12,6 +12,8 @@ import {
   TrendingDown,
   AlertTriangle,
   ArrowRight,
+  PieChart,
+  BarChart3,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -19,13 +21,44 @@ import { AICard } from "@/components/ui/AICard";
 import { AlertCard } from "@/components/ui/AlertCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Timeline } from "@/components/ui/Timeline";
+import { DonutChart } from "@/components/ui/DonutChart";
+import { BarChart } from "@/components/ui/BarChart";
 import { dashboardStats, inteligenciaOperacional } from "@/data/dashboard";
 import { alertas, ultimasAtualizacoes } from "@/data/alertas";
+import { processos } from "@/data/processos";
 import { formatCurrency } from "@/lib/utils";
+
+// Labels + cores para a distribuição de processos por status
+const statusChart: Record<string, { label: string; color: string }> = {
+  em_transito: { label: "Em trânsito", color: "#0ea5e9" },
+  atracado: { label: "Atracado", color: "#8b5cf6" },
+  desembaracado: { label: "Desembaraçado", color: "#14b8a6" },
+  aguardando_documento: { label: "Aguardando doc.", color: "#f59e0b" },
+  atrasado: { label: "Atrasado", color: "#f43f5e" },
+  concluido: { label: "Concluído", color: "#10b981" },
+  em_andamento: { label: "Em andamento", color: "#6366f1" },
+};
 
 export default function DashboardPage() {
   const s = dashboardStats;
   const criticos = alertas.filter((a) => a.prioridade === "critico");
+
+  const processosPorStatus = Object.entries(
+    processos.reduce<Record<string, number>>((acc, p) => {
+      acc[p.status] = (acc[p.status] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).map(([status, value]) => ({
+    label: statusChart[status]?.label ?? status,
+    value,
+    color: statusChart[status]?.color ?? "#94a3b8",
+  }));
+
+  const fluxoFinanceiro = [
+    { label: "Recebido no mês", value: s.recebidoMes, color: "#10b981" },
+    { label: "Pago no mês", value: s.pagoMes, color: "#f43f5e" },
+    { label: "Contas a pagar", value: s.contasAPagarMes, color: "#f59e0b" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -61,6 +94,32 @@ export default function DashboardPage() {
         <StatCard label="Contas a pagar no mês" value={formatCurrency(s.contasAPagarMes)} icon={Wallet} tone="slate" />
         <StatCard label="Total recebido no mês" value={formatCurrency(s.recebidoMes)} icon={TrendingUp} tone="emerald" trend={{ value: "+18%", positive: true }} />
         <StatCard label="Total pago no mês" value={formatCurrency(s.pagoMes)} icon={TrendingDown} tone="rose" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Processos por status" subtitle={`${processos.length} processos`} icon={PieChart} />
+          <div className="p-5">
+            <DonutChart
+              segments={processosPorStatus}
+              centerValue={processos.length}
+              centerLabel="processos"
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Fluxo financeiro do mês" subtitle="Junho/2026" icon={BarChart3} />
+          <div className="p-5">
+            <BarChart data={fluxoFinanceiro} formatValue={formatCurrency} />
+            <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-3 text-sm">
+              <span className="text-slate-500">Saldo do mês</span>
+              <span className="font-semibold text-emerald-600">
+                {formatCurrency(s.recebidoMes - s.pagoMes)}
+              </span>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

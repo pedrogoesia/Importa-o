@@ -18,6 +18,8 @@ import { Tabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AICard } from "@/components/ui/AICard";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { DonutChart } from "@/components/ui/DonutChart";
+import { BarChart } from "@/components/ui/BarChart";
 import {
   transacoes,
   contasPagar,
@@ -81,6 +83,25 @@ const contaCols: Column<ContaPagar>[] = [
 ];
 
 export default function FinanceiroPage() {
+  const entradas = transacoes
+    .filter((t) => t.tipo === "entrada")
+    .reduce((s, t) => s + t.valor, 0);
+  const saidas = transacoes
+    .filter((t) => t.tipo === "saida")
+    .reduce((s, t) => s + t.valor, 0);
+
+  // Despesas agrupadas por categoria (somente saídas)
+  const despesasPorCategoria = Object.entries(
+    transacoes
+      .filter((t) => t.tipo === "saida")
+      .reduce<Record<string, number>>((acc, t) => {
+        acc[t.categoria] = (acc[t.categoria] ?? 0) + t.valor;
+        return acc;
+      }, {})
+  )
+    .map(([label, value]) => ({ label, value, color: "#6366f1" }))
+    .sort((a, b) => b.value - a.value);
+
   const geral = (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -88,6 +109,27 @@ export default function FinanceiroPage() {
         <StatCard label="Pago no mês" value={formatCurrency(fechamentoMensal.totalPago)} icon={TrendingDown} tone="rose" />
         <StatCard label="Contas em aberto" value={formatCurrency(fechamentoMensal.contasEmAberto)} icon={Wallet} tone="amber" />
         <StatCard label="Boletos vencidos" value={formatCurrency(fechamentoMensal.boletosVencidos)} icon={Receipt} tone="rose" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Entradas × Saídas" subtitle="Movimentação do mês" icon={TrendingUp} />
+          <div className="p-5">
+            <DonutChart
+              segments={[
+                { label: "Entradas", value: entradas, color: "#10b981" },
+                { label: "Saídas", value: saidas, color: "#f43f5e" },
+              ]}
+              centerValue={`${Math.round((entradas / (entradas + saidas || 1)) * 100)}%`}
+              centerLabel="entradas"
+            />
+          </div>
+        </Card>
+        <Card>
+          <CardHeader title="Despesas por categoria" icon={Wallet} />
+          <div className="p-5">
+            <BarChart data={despesasPorCategoria} formatValue={formatCurrency} />
+          </div>
+        </Card>
       </div>
       <Card>
         <CardHeader title="Transações recentes" subtitle="Preparado para Open Finance" icon={Banknote} />
