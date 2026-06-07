@@ -1,0 +1,629 @@
+================================================================================
+CONTEXTO / BRIEFING COMPLETO — SISTEMA DE IA PARA IMPORTADORAS (Importa.AI)
+================================================================================
+Documento gerado a partir das instruções enviadas pelo usuário.
+Projeto: front-end navegável (Next.js + TypeScript + Tailwind) com dados mockados.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+PAPEL E OBJETIVO
+--------------------------------------------------------------------------------
+Você é um engenheiro front-end sênior e product designer. Construir a base visual
+e estrutural de um sistema web de IA para importadoras.
+
+O objetivo agora NÃO é criar backend real. O foco é criar um front-end navegável,
+profissional, limpo, moderno e preparado para depois conectar com APIs, banco de
+dados, integrações bancárias, Siscomex, Siscarga, emissão de boletos e agentes de IA.
+
+
+--------------------------------------------------------------------------------
+CONTEXTO DO PRODUTO
+--------------------------------------------------------------------------------
+Estamos criando um sistema operacional com IA para importadoras que hoje trabalham
+com muitas informações espalhadas em Google Drive, planilhas, WhatsApp, e-mail,
+Siscomex, Siscarga, controle manual de boletos, contas a pagar e processos fiscais
+separados.
+
+O produto deve parecer um ERP moderno + sistema operacional de IA para importadoras.
+
+A lógica central é:
+Empresa/CNPJ → Processo de importação → Documentos → Atualizações de carga →
+Financeiro → Fiscal → Relatórios e alertas.
+
+Tudo deve nascer de um processo de importação.
+
+Cada processo representa uma carga/operação de importação. A numeração que diferencia
+cada processo pode ser o número do BL/conhecimento de embarque, inserido manualmente.
+
+
+--------------------------------------------------------------------------------
+ARQUIVOS DE REFERÊNCIA
+--------------------------------------------------------------------------------
+Se existirem no projeto, ler e considerar:
+- BOOK MODELO.xlsx
+- imagem/diagrama do fluxo operacional atual
+
+A planilha contém informações importantes de cadastro, radar, certificados e IRPF.
+
+
+--------------------------------------------------------------------------------
+CAMPOS VINDOS DA PLANILHA
+--------------------------------------------------------------------------------
+
+CADASTRO:
+- Empresas
+- Matriz ou Filial
+- UF
+- ADM
+- CNPJ
+- Razão Social
+- Sócios
+- Inscrição Estadual
+- Endereço
+- CEP
+- Município
+- Inscrição Municipal
+- Data de Abertura
+- Benefício Fiscal
+- E-mail
+- E-mail 2
+- Contato
+- Contato 2
+- Regime Tributário
+- Contabilidade
+- Cliente
+
+RADAR:
+- Empresas
+- ADM
+- Último Registro
+- Data Limite Registro
+- Observações
+
+CERTIFICADOS:
+- Empresas
+- ADM
+- Validade do Certificado
+- Senha
+- Status
+- Sócios / Despachantes
+- Empresa
+- ADM
+- Validade do Certificado
+- Senha do Certificado
+- Status
+
+IRPF:
+- Empresas
+- Matriz ou Filial
+- UF
+- ADM
+- CNPJ
+- Sócios
+- Data de Abertura
+- Contador IRPF
+
+
+--------------------------------------------------------------------------------
+STACK RECOMENDADA
+--------------------------------------------------------------------------------
+- Next.js ou React com TypeScript
+- Tailwind CSS
+- Componentização limpa
+- Layout responsivo
+- Design clean, moderno, corporativo e premium
+- Não usar visual poluído
+- Não criar milhares de linhas desnecessárias
+- Pensar em arquitetura, componentes reutilizáveis e escalabilidade
+
+
+--------------------------------------------------------------------------------
+ESTILO VISUAL
+--------------------------------------------------------------------------------
+- Clean
+- AI-first
+- B2B premium
+- Similar a plataformas SaaS modernas
+- Interface clara, com bastante espaço em branco
+- Cards objetivos
+- Tabelas bem organizadas
+- Sidebar elegante
+- Dashboard com visão executiva
+- Nada com aparência de planilha antiga
+
+
+================================================================================
+ESTRUTURA PRINCIPAL DA APLICAÇÃO
+================================================================================
+
+--------------------------------------------------------------------------------
+1. DASHBOARD GERAL
+--------------------------------------------------------------------------------
+Visão executiva da operação:
+- Total de empresas cadastradas
+- Total de processos ativos
+- Processos aguardando documento
+- Processos com atualização de carga
+- Boletos vencidos
+- Boletos a vencer
+- Certificados vencendo
+- Contas a pagar no mês
+- Total recebido no mês
+- Total pago no mês
+- Alertas críticos
+- Últimas atualizações de carga
+- Resumo gerado por IA
+
+Adicionar card "Inteligência Operacional" com resumo em linguagem natural, como se
+uma IA estivesse analisando a operação.
+
+Exemplo:
+"Hoje existem 3 processos com risco de atraso, 2 empresas com certificado vencendo
+nos próximos 15 dias e 4 boletos aguardando pagamento. A prioridade recomendada é
+revisar os processos vinculados à Eleven e atualizar o radar antes do fechamento
+mensal."
+
+
+--------------------------------------------------------------------------------
+2. EMPRESAS
+--------------------------------------------------------------------------------
+Tela para listar e cadastrar empresas.
+
+Cada empresa deve ter:
+- Razão social
+- Nome fantasia
+- CNPJ
+- Matriz ou filial
+- UF
+- Endereço
+- CEP
+- Município
+- Inscrição Estadual
+- Inscrição Municipal
+- Sócios
+- ADM responsável
+- E-mail financeiro
+- E-mail operacional
+- Telefone/WhatsApp
+- Contabilidade
+- Regime tributário
+- Benefício fiscal
+- Cliente vinculado
+- Status da empresa
+- Certificado digital vinculado
+- Observações
+- Documentos fixos da empresa
+
+A tela deve permitir:
+- visualizar lista de empresas
+- buscar por empresa, CNPJ ou responsável
+- filtrar por UF, status, certificado vencendo, matriz/filial
+- abrir detalhe da empresa
+- ver processos vinculados à empresa
+- ver documentos fixos
+- ver pendências
+- ver histórico de atualizações
+
+
+--------------------------------------------------------------------------------
+3. PROCESSOS DE IMPORTAÇÃO (área principal)
+--------------------------------------------------------------------------------
+Cada processo deve ter:
+- Número interno do processo
+- Empresa responsável
+- CNPJ da empresa
+- Nome do cliente
+- Responsável interno
+- Despachante responsável
+- Fornecedor internacional
+- País de origem
+- Porto de origem
+- Porto de destino
+- Navio ou transportadora
+- Número do conhecimento de embarque / BL
+- Número do contêiner
+- Data estimada de embarque
+- Data estimada de chegada
+- Status atual da carga
+- Etapa atual do processo
+- Observações
+- Links de documentos
+- Documentos pendentes
+- Pagamentos vinculados
+- Notas fiscais vinculadas
+
+Listagem de processos com:
+- status visual
+- etapa atual
+- empresa
+- cliente
+- BL
+- container
+- ETA
+- responsável
+- alerta de pendência
+
+Página de detalhe do processo com abas:
+- Visão geral
+- Documentos
+- Carga
+- Financeiro
+- Fiscal
+- Histórico
+- IA
+
+Na aba IA, mostrar:
+- resumo automático do processo
+- próximos passos recomendados
+- inconsistências encontradas
+- documentos faltantes
+- riscos de atraso
+- mensagens sugeridas para enviar ao cliente ou grupo interno
+
+
+--------------------------------------------------------------------------------
+4. DOCUMENTOS
+--------------------------------------------------------------------------------
+Organizar documentos por empresa e por processo.
+
+Tipos de documentos:
+- Contrato social
+- Procuração
+- Certificado digital
+- Documentos dos sócios
+- Comprovante de endereço
+- Documentos contábeis
+- Documentos para abertura de empresa
+- Documentos para habilitação de importação
+- Invoice / Comercial Invoice
+- Packing list
+- Conhecimento de embarque
+- Documentos da carga
+- Comprovantes de pagamento
+- Boletos
+- Notas fiscais
+- Arquivos fiscais
+- Comprovantes bancários
+- Documentos de fechamento
+
+A IA deve aparecer como camada de análise:
+- extrair CNPJ, razão social, valores, datas e números
+- sugerir a qual processo o documento pertence
+- avisar quando faltar documento
+- gerar resumo do documento
+- apontar inconsistências
+
+No front, criar cards simulando essa análise da IA.
+
+
+--------------------------------------------------------------------------------
+5. ATUALIZAÇÕES DE CARGA / SISCOMEX / SISCARGA
+--------------------------------------------------------------------------------
+Simular o acompanhamento automático de cargas.
+
+Fluxo desejado:
+1. Sistema pega a lista de CNPJs cadastrados
+2. Consulta informações no Siscomex/Siscarga
+3. Captura atualizações de cada carga
+4. Salva um snapshot diário
+5. Compara o snapshot de hoje com o de ontem
+6. Identifica mudanças
+7. Gera relatório automático
+8. Envia para WhatsApp/e-mail/grupo interno
+
+No front, criar:
+- lista de snapshots diários
+- comparação "ontem vs hoje"
+- mudanças detectadas
+- status da carga
+- data da última consulta
+- relatório automático gerado por IA
+- botão visual "gerar relatório"
+- botão visual "enviar para grupo interno"
+
+Não precisa integrar de verdade. Usar mocks.
+
+
+--------------------------------------------------------------------------------
+6. FINANCEIRO
+--------------------------------------------------------------------------------
+Área financeira forte, com visão por empresa, por processo e geral.
+
+Entradas financeiras:
+- Extratos bancários
+- Boletos emitidos
+- Boletos pagos
+- Contas a pagar
+- Pagamentos realizados
+- Notas fiscais
+- Custos por processo
+- Taxas
+- Impostos
+- Despesas operacionais
+
+Futuramente será usado Open Finance para:
+- conectar contas bancárias
+- puxar entradas e saídas
+- categorizar transações
+- vincular transações a processos
+- identificar pagamentos de clientes
+- identificar despesas recorrentes
+- gerar fechamento mensal
+
+Telas:
+- Visão financeira geral
+- Financeiro por empresa
+- Financeiro por processo
+- Contas a pagar
+- Boletos
+- Fechamento mensal
+
+Saídas do fechamento:
+- Total recebido no mês
+- Total pago no mês
+- Contas em aberto
+- Boletos vencidos
+- Boletos pagos
+- Margem por processo
+- Custo por empresa
+- Saldo por empresa
+- Relatório mensal
+- Alertas de inconsistência
+
+
+--------------------------------------------------------------------------------
+7. BOLETOS
+--------------------------------------------------------------------------------
+Tela específica de gerenciamento de boletos.
+
+Funções:
+- Emitir boleto
+- Enviar boleto para cliente
+- Acompanhar vencimento
+- Identificar pagamento
+- Identificar atraso
+- Enviar lembrete
+- Cancelar boleto
+- Gerar segunda via
+- Vincular boleto a processo
+- Vincular boleto a empresa
+- Gerar relatório de inadimplência
+
+Status do boleto:
+- Criado
+- Enviado
+- Aguardando pagamento
+- Vencendo em breve
+- Vencido
+- Pago
+- Cancelado
+- Renegociado
+
+Fluxo visual:
+1. Operador cria cobrança
+2. Sistema emite boleto via integração financeira
+3. Sistema envia boleto ao cliente
+4. Sistema monitora pagamento
+5. Quando pago, marca como pago automaticamente
+6. Se não pago, envia alerta
+7. Financeiro visualiza quem pagou e quem não pagou
+
+
+--------------------------------------------------------------------------------
+8. FISCAL
+--------------------------------------------------------------------------------
+Área fiscal com:
+- Notas fiscais vinculadas
+- Notas fiscais de entrada
+- Arquivos fiscais
+- Documentos fiscais por processo
+- Status fiscal
+- Pendências
+- Alertas
+- Integrações futuras com emissão de nota fiscal de entrada via API
+
+Cards e tabelas simulando:
+- notas aguardando emissão
+- notas emitidas
+- notas com erro
+- documentos fiscais pendentes
+- vínculo com processo de importação
+
+
+--------------------------------------------------------------------------------
+9. RADAR / CERTIFICADOS / OBRIGAÇÕES
+--------------------------------------------------------------------------------
+Telas ou widgets para:
+- Radar
+- Certificados digitais
+- IRPF
+- Obrigações por empresa
+
+Radar:
+- Empresa
+- ADM
+- Último registro
+- Data limite de registro
+- Status
+- Observações
+
+Certificados:
+- Empresa
+- Responsável
+- Validade
+- Status
+- Dias até vencer
+- Sócio/despachante vinculado
+
+IRPF:
+- Empresa
+- CNPJ
+- Sócios
+- Data de abertura
+- Contador responsável
+- Status
+
+Alertas automáticos:
+- certificado vencendo
+- radar próximo do prazo
+- documento faltando
+- conta vencendo
+- boleto vencido
+- processo sem atualização
+
+
+--------------------------------------------------------------------------------
+10. RELATÓRIOS E ALERTAS
+--------------------------------------------------------------------------------
+Relatórios:
+- Relatório diário de mudanças da carga
+- Relatório financeiro mensal
+- Relatório de inadimplência
+- Relatório por empresa
+- Relatório por processo
+- Relatório de documentos pendentes
+- Relatório fiscal
+
+Alertas:
+- críticos
+- atenção
+- informativos
+- resolvidos
+
+Cada alerta deve ter:
+- tipo
+- empresa
+- processo vinculado
+- prioridade
+- descrição
+- recomendação da IA
+- status
+
+
+--------------------------------------------------------------------------------
+11. CENTRAL DE IA / COPILOTO OPERACIONAL
+--------------------------------------------------------------------------------
+Deve parecer um copiloto interno da operação.
+
+Funcionalidades simuladas:
+- perguntar sobre qualquer empresa
+- perguntar sobre qualquer processo
+- gerar resumo financeiro
+- identificar processos com risco
+- listar documentos faltantes
+- sugerir próximos passos
+- preparar mensagem para cliente
+- preparar relatório para WhatsApp
+- explicar inconsistências
+- consultar status da carga
+- consultar boletos em aberto
+- consultar contas a pagar
+
+Interface de chat, com exemplos prontos de perguntas:
+- "Quais processos precisam de atenção hoje?"
+- "Quais boletos estão vencidos?"
+- "Quais empresas estão com certificado vencendo?"
+- "Gere um resumo do fechamento mensal."
+- "Quais documentos faltam no processo BL-12345?"
+- "O que mudou nas cargas desde ontem?"
+
+
+--------------------------------------------------------------------------------
+12. DESIGN E NAVEGAÇÃO
+--------------------------------------------------------------------------------
+Sidebar com:
+- Dashboard
+- Empresas
+- Processos
+- Documentos
+- Cargas
+- Financeiro
+- Boletos
+- Fiscal
+- Radar
+- Certificados
+- Relatórios
+- Central de IA
+- Configurações
+
+Dados mockados realistas usando nomes como:
+- Eleven
+- IGCD
+- M&S
+- Processo IMP-001
+- Processo IMP-002
+- BL-987654
+- BL-123456
+- Container MSKU1234567
+
+Componentes reutilizáveis:
+- AppLayout
+- Sidebar
+- Topbar
+- StatCard
+- StatusBadge
+- DataTable
+- ProcessCard
+- AlertCard
+- AICard
+- Timeline
+- DocumentCard
+- FinancialSummary
+- EmptyState
+- FilterBar
+
+
+--------------------------------------------------------------------------------
+REGRAS IMPORTANTES
+--------------------------------------------------------------------------------
+- Não criar backend real.
+- Não criar autenticação complexa agora.
+- Não integrar APIs reais agora.
+- Usar mocks bem organizados.
+- Separar dados mockados em arquivos próprios.
+- Criar tipos TypeScript bem definidos.
+- Código limpo e escalável.
+- Evitar overengineering.
+- Priorizar uma interface bonita e navegável.
+- O sistema precisa transmitir valor de "operação com IA", e não apenas uma
+  planilha digitalizada.
+
+
+--------------------------------------------------------------------------------
+RESULTADO ESPERADO
+--------------------------------------------------------------------------------
+Uma aplicação front-end funcional e navegável, com visual profissional, mostrando
+claramente como será o sistema de IA para importadoras.
+
+Antes de codar:
+1. Analisar a estrutura atual do projeto.
+2. Ver qual stack está sendo usada.
+3. Preservar a arquitetura existente.
+4. Só alterar o necessário.
+5. Explicar rapidamente o plano de implementação.
+6. Depois implementar.
+
+Depois de implementar:
+1. Garantir que a aplicação rode sem erros.
+2. Garantir que todas as rotas principais existam.
+3. Garantir que os dados mockados estejam centralizados.
+4. Garantir que o design esteja consistente.
+5. Dizer quais arquivos foram criados ou alterados.
+
+
+================================================================================
+EVOLUÇÕES SOLICITADAS DEPOIS (histórico do projeto)
+================================================================================
+- Criação do PR #1 (branch main como base + branch da feature).
+- Pedido para abrir/visualizar o projeto (instruções de execução local e Vercel).
+- Dúvida sobre custo da Vercel (plano Hobby grátis para uso pessoal/protótipo).
+- Escolha de continuar o desenvolvimento em "Melhorar telas atuais":
+    * Componentes de gráfico BarChart e DonutChart (SVG puro, sem dependências).
+    * Dashboard: donut de processos por status + barras de fluxo financeiro do mês.
+    * Financeiro: donut Entradas x Saídas + barras de despesas por categoria.
+- Uso do recurso "Ver prévia" do Claude Code com o servidor de desenvolvimento ligado.
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================
