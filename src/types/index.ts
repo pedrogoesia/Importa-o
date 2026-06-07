@@ -196,6 +196,40 @@ export interface ContaPagar {
   status: ContaStatus;
 }
 
+export type CustoCategoria =
+  | "Frete internacional"
+  | "II/IPI"
+  | "ICMS"
+  | "AFRMM"
+  | "Despachante"
+  | "Armazenagem"
+  | "Demurrage"
+  | "Seguro"
+  | "Taxas Siscomex"
+  | "Frete rodoviário"
+  | "Outras";
+
+/** Lançamento de custo de um processo de importação (base do DRE e do repasse). */
+export interface CustoProcesso {
+  id: ID;
+  processoNumero: string;
+  empresaNome: string;
+  categoria: CustoCategoria;
+  descricao: string;
+  valor: number;
+  repassavel: boolean;
+  status: "previsto" | "realizado";
+  data: string;
+}
+
+/** Cabeçalho de rentabilidade por processo (receita faturada ao cliente). */
+export interface RentabilidadeProcesso {
+  processo: string;
+  empresaNome: string;
+  cliente: string;
+  receita: number;
+}
+
 export type NotaFiscalStatus =
   | "aguardando_emissao"
   | "emitida"

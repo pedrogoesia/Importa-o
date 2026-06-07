@@ -1,4 +1,10 @@
-import type { Boleto, ContaPagar, Transacao } from "@/types";
+import type {
+  Boleto,
+  ContaPagar,
+  Transacao,
+  CustoProcesso,
+  RentabilidadeProcesso,
+} from "@/types";
 
 export const transacoes: Transacao[] = [
   {
@@ -281,9 +287,51 @@ export const fechamentoMensal = {
   ],
 };
 
-export const margemPorProcesso = [
-  { processo: "IMP-001", receita: 180_000, custo: 121_000, margem: 0.33 },
-  { processo: "IMP-002", receita: 240_000, custo: 162_000, margem: 0.33 },
-  { processo: "IMP-003", receita: 96_000, custo: 71_000, margem: 0.26 },
-  { processo: "IMP-006", receita: 240_000, custo: 151_000, margem: 0.37 },
+// Receita faturada ao cliente por processo (cabeçalho do DRE)
+export const rentabilidadeProcessos: RentabilidadeProcesso[] = [
+  { processo: "IMP-001", empresaNome: "Eleven", cliente: "Eleven Group", receita: 180_000 },
+  { processo: "IMP-002", empresaNome: "IGCD", cliente: "IGCD Holding", receita: 240_000 },
+  { processo: "IMP-003", empresaNome: "M&S", cliente: "M&S Comercial", receita: 96_000 },
+  { processo: "IMP-005", empresaNome: "Nordix", cliente: "Nordix", receita: 38_000 },
+  { processo: "IMP-006", empresaNome: "IGCD", cliente: "IGCD Holding", receita: 240_000 },
+];
+
+// Custos detalhados por processo (categoria, repasse e previsto/realizado)
+export const custosProcesso: CustoProcesso[] = [
+  // IMP-001 — Eleven
+  { id: "cu-101", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "Frete internacional", descricao: "Frete marítimo Yantian→Santos", valor: 38_000, repassavel: true, status: "realizado", data: "2026-05-12" },
+  { id: "cu-102", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "II/IPI", descricao: "DARF II/IPI", valor: 44_700, repassavel: true, status: "previsto", data: "2026-06-12" },
+  { id: "cu-103", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "ICMS", descricao: "ICMS importação (GNRE)", valor: 22_000, repassavel: true, status: "previsto", data: "2026-06-13" },
+  { id: "cu-104", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "Despachante", descricao: "Honorários despachante", valor: 6_500, repassavel: true, status: "realizado", data: "2026-05-30" },
+  { id: "cu-105", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "Armazenagem", descricao: "Armazenagem portuária Santos", valor: 5_500, repassavel: true, status: "realizado", data: "2026-06-02" },
+  { id: "cu-106", processoNumero: "IMP-001", empresaNome: "Eleven", categoria: "Seguro", descricao: "Seguro internacional de carga", valor: 4_000, repassavel: true, status: "realizado", data: "2026-05-11" },
+
+  // IMP-002 — IGCD
+  { id: "cu-201", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "Frete internacional", descricao: "Frete marítimo Hamburgo→Itajaí", valor: 42_500, repassavel: true, status: "realizado", data: "2026-05-04" },
+  { id: "cu-202", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "II/IPI", descricao: "DARF II/IPI", valor: 58_000, repassavel: true, status: "previsto", data: "2026-06-09" },
+  { id: "cu-203", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "ICMS", descricao: "ICMS importação (TTD 409)", valor: 31_000, repassavel: true, status: "previsto", data: "2026-06-10" },
+  { id: "cu-204", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "AFRMM", descricao: "AFRMM Marinha Mercante", valor: 14_900, repassavel: true, status: "realizado", data: "2026-06-06" },
+  { id: "cu-205", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "Despachante", descricao: "Honorários despachante", valor: 6_500, repassavel: true, status: "realizado", data: "2026-06-04" },
+  { id: "cu-206", processoNumero: "IMP-002", empresaNome: "IGCD", categoria: "Armazenagem", descricao: "Armazenagem Portonave", valor: 12_400, repassavel: true, status: "realizado", data: "2026-06-05" },
+
+  // IMP-003 — M&S
+  { id: "cu-301", processoNumero: "IMP-003", empresaNome: "M&S", categoria: "Frete internacional", descricao: "Frete marítimo", valor: 18_000, repassavel: true, status: "realizado", data: "2026-05-20" },
+  { id: "cu-302", processoNumero: "IMP-003", empresaNome: "M&S", categoria: "II/IPI", descricao: "DARF II/IPI", valor: 31_200, repassavel: true, status: "realizado", data: "2026-06-03" },
+  { id: "cu-303", processoNumero: "IMP-003", empresaNome: "M&S", categoria: "ICMS", descricao: "ICMS importação (FUNDAP)", valor: 12_000, repassavel: true, status: "previsto", data: "2026-06-15" },
+  { id: "cu-304", processoNumero: "IMP-003", empresaNome: "M&S", categoria: "Despachante", descricao: "Taxa de despachante", valor: 4_800, repassavel: true, status: "realizado", data: "2026-06-01" },
+  { id: "cu-305", processoNumero: "IMP-003", empresaNome: "M&S", categoria: "Frete rodoviário", descricao: "Frete rodoviário Vitória→Cliente", valor: 8_900, repassavel: true, status: "previsto", data: "2026-06-18" },
+
+  // IMP-005 — Nordix (demurrage absorvido: reduz margem)
+  { id: "cu-501", processoNumero: "IMP-005", empresaNome: "Nordix", categoria: "Frete internacional", descricao: "Frete marítimo Paranaguá", valor: 12_000, repassavel: true, status: "realizado", data: "2026-05-22" },
+  { id: "cu-502", processoNumero: "IMP-005", empresaNome: "Nordix", categoria: "Demurrage", descricao: "Demurrage por atraso operacional", valor: 9_300, repassavel: false, status: "realizado", data: "2026-05-30" },
+  { id: "cu-503", processoNumero: "IMP-005", empresaNome: "Nordix", categoria: "Armazenagem", descricao: "Armazenagem Paranaguá", valor: 5_200, repassavel: true, status: "realizado", data: "2026-05-28" },
+  { id: "cu-504", processoNumero: "IMP-005", empresaNome: "Nordix", categoria: "Despachante", descricao: "Honorários despachante", valor: 3_500, repassavel: true, status: "realizado", data: "2026-05-25" },
+
+  // IMP-006 — IGCD
+  { id: "cu-601", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "Frete internacional", descricao: "Frete marítimo", valor: 40_000, repassavel: true, status: "realizado", data: "2026-04-20" },
+  { id: "cu-602", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "II/IPI", descricao: "DARF II/IPI", valor: 62_000, repassavel: true, status: "previsto", data: "2026-06-20" },
+  { id: "cu-603", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "ICMS", descricao: "ICMS importação", valor: 30_000, repassavel: true, status: "previsto", data: "2026-06-21" },
+  { id: "cu-604", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "Despachante", descricao: "Honorários despachante", valor: 7_000, repassavel: true, status: "realizado", data: "2026-04-18" },
+  { id: "cu-605", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "Armazenagem", descricao: "Armazenagem", valor: 8_000, repassavel: true, status: "realizado", data: "2026-04-25" },
+  { id: "cu-606", processoNumero: "IMP-006", empresaNome: "IGCD", categoria: "Seguro", descricao: "Seguro internacional de carga", valor: 4_000, repassavel: true, status: "realizado", data: "2026-04-15" },
 ];

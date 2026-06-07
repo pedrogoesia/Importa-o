@@ -19,6 +19,8 @@ import {
   Search,
   Scale,
   Landmark,
+  LineChart as LineChartIcon,
+  ChevronDown,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -29,6 +31,7 @@ import { AICard } from "@/components/ui/AICard";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { DonutChart } from "@/components/ui/DonutChart";
 import { BarChart } from "@/components/ui/BarChart";
+import { LineChart } from "@/components/ui/LineChart";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, PrimaryButton, GhostButton } from "@/components/ui/Form";
 import { EmpresaMultiSelect } from "@/components/ui/EmpresaMultiSelect";
@@ -38,11 +41,19 @@ import {
   contasPagar as contasPagarSeed,
   boletos as boletosSeed,
   fechamentoMensal,
-  margemPorProcesso,
+  rentabilidadeProcessos,
+  custosProcesso,
 } from "@/data/financeiro";
 import { empresas } from "@/data/empresas";
 import { formatCurrency, formatDate, daysUntil, cn } from "@/lib/utils";
 import type { Transacao, ContaPagar, Boleto } from "@/types";
+
+const TODAY = "2026-06-06";
+function addDaysISO(iso: string, days: number) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 const empresaNomes = empresas.map((e) => e.nomeFantasia);
 const empOptions = empresas.map((e) => ({ value: e.nomeFantasia, label: e.nomeFantasia }));
@@ -70,6 +81,11 @@ export default function FinanceiroPage() {
   const ofConectadas = empresasView.filter(
     (e) => e.integracoes?.openFinance === "conectado"
   ).length;
+
+  // Fluxo de caixa + Rentabilidade
+  const [saldoInicial, setSaldoInicial] = useState("350.000,00");
+  const [rentView, setRentView] = useState<"processo" | "cliente">("processo");
+  const [custoOpen, setCustoOpen] = useState<string | null>(null);
 
   // Contas a pagar toolbar
   const [contaQuick, setContaQuick] = useState<"todas" | "atraso" | "hoje" | "semana">("todas");
@@ -693,32 +709,344 @@ export default function FinanceiroPage() {
     </div>
   );
 
-  const porProcesso = (
-    <Card>
-      <CardHeader title="Margem por processo" icon={Ship} />
-      <div className="divide-y divide-slate-50">
-        {margemPorProcesso.map((m) => (
-          <div key={m.processo} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm font-medium text-slate-900">{m.processo}</p>
-              <p className="text-xs text-slate-400">
-                Receita {formatCurrency(m.receita)} · Custo {formatCurrency(m.custo)}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden w-32 sm:block">
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${m.margem * 100}%` }} />
-                </div>
-              </div>
-              <span className="w-12 text-right text-sm font-semibold text-slate-900">
-                {Math.round(m.margem * 100)}%
+  // ====================== FLUXO DE CAIXA ======================
+  const NUM_SEMANAS = 6;
+  const saldoInicialNum = parseValor(saldoInicial);
+  const fmtK = (v: number) => {
+    const a = Math.abs(v);
+    return a >= 1000 ? `${v < 0 ? "-" : ""}R$ ${Math.round(a / 1000)}k` : formatCurrency(v);
+  };
+
+  const fluxo = useMemo(() => {
+    const pagar = contasView.filter((c) => c.status !== "paga");
+    const receb = receberView.filter((b) => b.status !== "pago" && b.status !== "cancelado");
+    const buckets = Array.from({ length: NUM_SEMANAS }).map((_, b) => ({
+      idx: b,
+      inicio: addDaysISO(TODAY, b * 7),
+      fim: addDaysISO(TODAY, b * 7 + 6),
+      entradas: 0,
+      saidas: 0,
+    }));
+    const put = (venc: string, valor: number, tipo: "e" | "s") => {
+      const d = daysUntil(venc);
+      const idx = d < 0 ? 0 : Math.floor(d / 7);
+      if (idx >= NUM_SEMANAS) return;
+      if (tipo === "e") buckets[idx].entradas += valor;
+      else buckets[idx].saidas += valor;
+    };
+    receb.forEach((b) => put(b.vencimento, b.valor, "e"));
+    pagar.forEach((c) => put(c.vencimento, c.valor, "s"));
+    let saldo = saldoInicialNum;
+    return buckets.map((bk) => {
+      const resultado = bk.entradas - bk.saidas;
+      saldo += resultado;
+      return { ...bk, resultado, saldo };
+    });
+  }, [contasView, receberView, saldoInicial]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cfEntradas = fluxo.reduce((s, w) => s + w.entradas, 0);
+  const cfSaidas = fluxo.reduce((s, w) => s + w.saidas, 0);
+  const cfSaldoFinal = fluxo.length ? fluxo[fluxo.length - 1].saldo : saldoInicialNum;
+  const cfNegativo = fluxo.find((w) => w.saldo < 0);
+  const cfMenorSaldo = fluxo.reduce((m, w) => Math.min(m, w.saldo), saldoInicialNum);
+
+  const fluxoCaixaTab = (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-600">Saldo em caixa hoje:</span>
+        </div>
+        <Input
+          inputMode="decimal"
+          value={saldoInicial}
+          onChange={(e) => setSaldoInicial(e.target.value)}
+          className="w-40"
+        />
+        <span className="text-xs text-slate-400 sm:ml-auto">
+          Projeção das próximas {NUM_SEMANAS} semanas com base nos vencimentos a pagar e a receber
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Entradas previstas" value={formatCurrency(cfEntradas)} icon={ArrowDownLeft} tone="emerald" />
+        <StatCard label="Saídas previstas" value={formatCurrency(cfSaidas)} icon={ArrowUpRight} tone="rose" />
+        <StatCard
+          label="Saldo projetado (fim)"
+          value={formatCurrency(cfSaldoFinal)}
+          icon={Scale}
+          tone={cfSaldoFinal >= 0 ? "emerald" : "rose"}
+        />
+        <StatCard
+          label="Menor saldo no período"
+          value={formatCurrency(cfMenorSaldo)}
+          icon={cfMenorSaldo < 0 ? AlertTriangle : CheckCircle2}
+          tone={cfMenorSaldo < 0 ? "rose" : "sky"}
+        />
+      </div>
+
+      {cfNegativo ? (
+        <AICard title="Alerta de caixa">
+          O caixa projetado fica <strong>negativo</strong> na semana de{" "}
+          <strong>{formatDate(cfNegativo.inicio)}</strong> (saldo {formatCurrency(cfNegativo.saldo)}).
+          Recomendação: antecipar recebimentos dos boletos a vencer, renegociar prazos de contas a pagar
+          ou usar o limite de capital de giro antes dessa data.
+        </AICard>
+      ) : (
+        <AICard title="Saúde do caixa">
+          O caixa permanece <strong>positivo</strong> em todas as {NUM_SEMANAS} semanas projetadas, com saldo
+          mínimo de <strong>{formatCurrency(cfMenorSaldo)}</strong>. Há folga para antecipar pagamentos com
+          desconto ou aplicar o excedente.
+        </AICard>
+      )}
+
+      <Card>
+        <CardHeader title="Saldo projetado" subtitle="Evolução semana a semana" icon={LineChartIcon} />
+        <div className="p-5">
+          <LineChart
+            points={[
+              { label: "Hoje", value: saldoInicialNum },
+              ...fluxo.map((w) => ({ label: formatDate(w.inicio).slice(0, 5), value: w.saldo })),
+            ]}
+            formatValue={fmtK}
+          />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Detalhamento semanal" icon={CalendarClock} />
+        <div className="hidden grid-cols-5 gap-2 border-b border-slate-100 px-5 py-2.5 text-xs font-medium text-slate-400 sm:grid">
+          <span>Semana</span>
+          <span className="text-right">Entradas</span>
+          <span className="text-right">Saídas</span>
+          <span className="text-right">Resultado</span>
+          <span className="text-right">Saldo projetado</span>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {fluxo.map((w) => (
+            <div key={w.idx} className="grid grid-cols-2 gap-2 px-5 py-3 text-sm sm:grid-cols-5">
+              <span className="text-slate-600">
+                {formatDate(w.inicio).slice(0, 5)}–{formatDate(w.fim).slice(0, 5)}
+              </span>
+              <span className="text-right text-emerald-600">+ {formatCurrency(w.entradas)}</span>
+              <span className="text-right text-rose-600">− {formatCurrency(w.saidas)}</span>
+              <span className={cn("text-right font-medium", w.resultado >= 0 ? "text-slate-700" : "text-rose-600")}>
+                {w.resultado >= 0 ? "+" : "−"} {formatCurrency(Math.abs(w.resultado))}
+              </span>
+              <span className={cn("text-right font-semibold", w.saldo >= 0 ? "text-slate-900" : "text-rose-600")}>
+                {formatCurrency(w.saldo)}
               </span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  // ====================== RENTABILIDADE (DRE) ======================
+  const margemTone = (m: number) =>
+    m >= 0.3 ? "text-emerald-600" : m >= 0.2 ? "text-amber-600" : "text-rose-600";
+  const margemBar = (m: number) =>
+    m >= 0.3 ? "bg-emerald-500" : m >= 0.2 ? "bg-amber-500" : "bg-rose-500";
+
+  const rentabilidade = useMemo(() => {
+    const custosView = custosProcesso.filter((c) => inScope(c.empresaNome));
+    return rentabilidadeProcessos
+      .filter((r) => inScope(r.empresaNome))
+      .map((r) => {
+        const custos = custosView.filter((c) => c.processoNumero === r.processo);
+        const custoTotal = custos.reduce((s, c) => s + c.valor, 0);
+        const repassavel = custos.filter((c) => c.repassavel).reduce((s, c) => s + c.valor, 0);
+        const absorvido = custoTotal - repassavel;
+        const resultado = r.receita - custoTotal;
+        const margem = r.receita ? resultado / r.receita : 0;
+        return { ...r, custos, custoTotal, repassavel, absorvido, resultado, margem };
+      })
+      .sort((a, b) => a.margem - b.margem);
+  }, [empSel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const rentPorCliente = useMemo(() => {
+    const map = new Map<string, { empresaNome: string; cliente: string; receita: number; custoTotal: number }>();
+    for (const r of rentabilidade) {
+      const cur = map.get(r.empresaNome) ?? {
+        empresaNome: r.empresaNome,
+        cliente: r.cliente,
+        receita: 0,
+        custoTotal: 0,
+      };
+      cur.receita += r.receita;
+      cur.custoTotal += r.custoTotal;
+      map.set(r.empresaNome, cur);
+    }
+    return Array.from(map.values())
+      .map((c) => ({
+        ...c,
+        resultado: c.receita - c.custoTotal,
+        margem: c.receita ? (c.receita - c.custoTotal) / c.receita : 0,
+      }))
+      .sort((a, b) => b.resultado - a.resultado);
+  }, [rentabilidade]);
+
+  const rentReceita = rentabilidade.reduce((s, r) => s + r.receita, 0);
+  const rentCusto = rentabilidade.reduce((s, r) => s + r.custoTotal, 0);
+  const rentResultado = rentReceita - rentCusto;
+  const rentMargem = rentReceita ? rentResultado / rentReceita : 0;
+
+  const rentabilidadeTab = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Receita (faturado)" value={formatCurrency(rentReceita)} icon={TrendingUp} tone="sky" />
+        <StatCard label="Custo total" value={formatCurrency(rentCusto)} icon={TrendingDown} tone="rose" />
+        <StatCard label="Resultado" value={formatCurrency(rentResultado)} icon={Scale} tone={rentResultado >= 0 ? "emerald" : "rose"} />
+        <StatCard label="Margem média" value={`${Math.round(rentMargem * 100)}%`} icon={TrendingUp} tone="brand" />
       </div>
-    </Card>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">
+          {rentView === "processo" ? "Resultado por processo de importação" : "Resultado consolidado por cliente"}
+        </p>
+        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
+          {(
+            [
+              { id: "processo", label: "Por processo", icon: Ship },
+              { id: "cliente", label: "Por cliente", icon: Building2 },
+            ] as const
+          ).map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setRentView(v.id)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+                rentView === v.id ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <v.icon className="h-3.5 w-3.5" /> {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {rentView === "processo" ? (
+        <div className="space-y-3">
+          {rentabilidade.map((r) => {
+            const aberto = custoOpen === r.processo;
+            return (
+              <Card key={r.processo} className={cn(r.margem < 0.2 && "border-rose-200")}>
+                <button
+                  onClick={() => setCustoOpen(aberto ? null : r.processo)}
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <Ship className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {r.processo} <span className="font-normal text-slate-400">· {r.empresaNome} · {r.cliente}</span>
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Receita {formatCurrency(r.receita)} · Custo {formatCurrency(r.custoTotal)} ·{" "}
+                      <span className={r.resultado >= 0 ? "text-emerald-600" : "text-rose-600"}>
+                        Resultado {formatCurrency(r.resultado)}
+                      </span>
+                      {r.absorvido > 0 && (
+                        <span className="text-rose-500"> · {formatCurrency(r.absorvido)} absorvido</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="hidden w-28 sm:block">
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className={cn("h-full rounded-full", margemBar(r.margem))} style={{ width: `${Math.max(r.margem * 100, 3)}%` }} />
+                    </div>
+                  </div>
+                  <span className={cn("w-12 text-right text-sm font-semibold", margemTone(r.margem))}>
+                    {Math.round(r.margem * 100)}%
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-400 transition", aberto && "rotate-180")} />
+                </button>
+
+                {aberto && (
+                  <div className="border-t border-slate-100">
+                    <div className="hidden grid-cols-12 gap-2 px-5 py-2 text-[11px] font-medium text-slate-400 sm:grid">
+                      <span className="col-span-5">Categoria / descrição</span>
+                      <span className="col-span-2">Repasse</span>
+                      <span className="col-span-2">Situação</span>
+                      <span className="col-span-3 text-right">Valor</span>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                      {r.custos.map((c) => (
+                        <div key={c.id} className="grid grid-cols-2 gap-2 px-5 py-2.5 text-sm sm:grid-cols-12">
+                          <div className="sm:col-span-5">
+                            <p className="font-medium text-slate-700">{c.categoria}</p>
+                            <p className="text-xs text-slate-400">{c.descricao}</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span
+                              className={cn(
+                                "rounded-md px-1.5 py-0.5 text-[10px] font-medium",
+                                c.repassavel ? "bg-sky-50 text-sky-600" : "bg-rose-50 text-rose-600"
+                              )}
+                            >
+                              {c.repassavel ? "Repassável" : "Absorvido"}
+                            </span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span
+                              className={cn(
+                                "rounded-md px-1.5 py-0.5 text-[10px] font-medium",
+                                c.status === "realizado" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                              )}
+                            >
+                              {c.status === "realizado" ? "Realizado" : "Previsto"}
+                            </span>
+                          </div>
+                          <div className="text-right font-medium text-slate-700 sm:col-span-3">
+                            {formatCurrency(c.valor)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-1 border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-xs">
+                      <span className="text-slate-500">Custo repassável: <strong className="text-slate-700">{formatCurrency(r.repassavel)}</strong></span>
+                      <span className="text-slate-500">Absorvido: <strong className="text-rose-600">{formatCurrency(r.absorvido)}</strong></span>
+                      <span className="text-slate-500">Resultado: <strong className={r.resultado >= 0 ? "text-emerald-600" : "text-rose-600"}>{formatCurrency(r.resultado)}</strong></span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <div className="divide-y divide-slate-50">
+            {rentPorCliente.map((c) => (
+              <div key={c.empresaNome} className="flex items-center gap-4 px-5 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{c.empresaNome}</p>
+                  <p className="text-xs text-slate-400">
+                    {c.cliente} · Receita {formatCurrency(c.receita)} · Custo {formatCurrency(c.custoTotal)}
+                  </p>
+                </div>
+                <div className="hidden w-32 sm:block">
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className={cn("h-full rounded-full", margemBar(c.margem))} style={{ width: `${Math.max(c.margem * 100, 3)}%` }} />
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={cn("text-sm font-semibold", c.resultado >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                    {formatCurrency(c.resultado)}
+                  </p>
+                  <p className={cn("text-xs", margemTone(c.margem))}>{Math.round(c.margem * 100)}% margem</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
   );
 
   const fechamento = (
@@ -752,7 +1080,7 @@ export default function FinanceiroPage() {
     <div>
       <PageHeader
         title="Financeiro"
-        description="Operação financeira do dia a dia: contas a pagar e receber, conciliação e fechamento"
+        description="Fluxo de caixa, contas a pagar e receber, rentabilidade por processo e conciliação — por empresa"
       />
 
       <div className="mb-6 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-card sm:flex-row sm:items-center sm:gap-3">
@@ -772,13 +1100,14 @@ export default function FinanceiroPage() {
 
       <Tabs
         tabs={[
-          { key: "geral", label: "Visão geral", content: geral },
-          { key: "pagar", label: "Contas a pagar", content: contasTab },
-          { key: "receber", label: "Contas a receber", content: receberTab },
-          { key: "conciliacao", label: "Conciliação", content: conciliacaoTab },
-          { key: "empresa", label: "Por empresa", content: porEmpresa },
-          { key: "processo", label: "Por processo", content: porProcesso },
-          { key: "fechamento", label: "Fechamento", content: fechamento },
+          { key: "geral", label: "Visão geral", icon: Scale, content: geral },
+          { key: "fluxo", label: "Fluxo de caixa", icon: LineChartIcon, content: fluxoCaixaTab },
+          { key: "pagar", label: "Contas a pagar", icon: Wallet, content: contasTab },
+          { key: "receber", label: "Contas a receber", icon: Receipt, content: receberTab },
+          { key: "rentabilidade", label: "Rentabilidade", icon: TrendingUp, content: rentabilidadeTab },
+          { key: "empresa", label: "Por empresa", icon: Building2, content: porEmpresa },
+          { key: "conciliacao", label: "Conciliação", icon: Banknote, content: conciliacaoTab },
+          { key: "fechamento", label: "Fechamento", icon: CalendarClock, content: fechamento },
         ]}
       />
 
