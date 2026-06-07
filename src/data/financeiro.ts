@@ -129,6 +129,26 @@ export const contasPagar: ContaPagar[] = [
     vencimento: "2026-05-28",
     status: "paga",
   },
+  {
+    id: "cp-007",
+    descricao: "AFRMM - Marinha Mercante IMP-002",
+    fornecedor: "Receita Federal",
+    empresaNome: "IGCD",
+    processoNumero: "IMP-002",
+    valor: 14_900,
+    vencimento: "2026-06-06",
+    status: "em_aberto",
+  },
+  {
+    id: "cp-008",
+    descricao: "Seguro internacional de carga IMP-004",
+    fornecedor: "Porto Seguro",
+    empresaNome: "Eleven",
+    processoNumero: "IMP-004",
+    valor: 5_200,
+    vencimento: "2026-06-10",
+    status: "em_aberto",
+  },
 ];
 
 export const boletos: Boleto[] = [
