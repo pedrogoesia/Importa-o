@@ -28,6 +28,7 @@ import { EmpresaMultiSelect } from "@/components/ui/EmpresaMultiSelect";
 import { useToast } from "@/components/ui/Toast";
 import { boletos as boletosSeed } from "@/data/financeiro";
 import { empresas } from "@/data/empresas";
+import { processos } from "@/data/processos";
 import { formatCurrency, formatDate, daysUntil, cn } from "@/lib/utils";
 import type { Boleto } from "@/types";
 
@@ -47,9 +48,8 @@ const isAberto = (b: Boleto) => b.status !== "pago" && b.status !== "cancelado";
 const empOptions = empresas.map((e) => ({ value: e.nomeFantasia, label: e.nomeFantasia }));
 
 const emptyForm = {
-  cliente: "",
-  empresaNome: "",
-  processoNumero: "",
+  empresaId: "",
+  processoId: "",
   valorTotal: "",
   parcelas: "1",
   primeiroVenc: "",
@@ -121,24 +121,34 @@ export default function BoletosPage() {
     if (msg) toast({ ...msg, tone: label === "lembrete" ? "warning" : "info" });
   };
 
+  // Seleções do formulário (empresa → cliente automático → processos da empresa)
+  const empresaSel = empresas.find((e) => e.id === form.empresaId);
+  const processosDaEmpresa = useMemo(
+    () => (form.empresaId ? processos.filter((p) => p.empresaId === form.empresaId) : []),
+    [form.empresaId]
+  );
+  const processoSel = processos.find((p) => p.id === form.processoId);
+  const clienteAtual = processoSel?.cliente || empresaSel?.clienteVinculado || "";
+
   const handleEmitir = (e: React.FormEvent) => {
     e.preventDefault();
     const grupoId = `cob-${Date.now()}`;
     const novos: Boleto[] = preview.itens.map((it) => ({
       id: `${grupoId}-${it.parcela}`,
       numero: `${Math.floor(Math.random() * 90000 + 10000)}.${it.parcela}`,
-      empresaId: "",
-      empresaNome: form.empresaNome || "—",
-      processoNumero: form.processoNumero || undefined,
-      cliente: form.cliente || "—",
+      empresaId: empresaSel?.id ?? "",
+      empresaNome: empresaSel?.nomeFantasia ?? "—",
+      processoId: processoSel?.id,
+      processoNumero: processoSel?.numeroInterno,
+      cliente: clienteAtual || "—",
       valor: it.valor,
       emissao: TODAY,
       vencimento: it.vencimento,
       status: "criado",
       descricao:
         preview.n > 1
-          ? `Parcela ${it.parcela}/${preview.n} — ${form.cliente || "cobrança"}`
-          : `Cobrança — ${form.cliente || "cliente"}`,
+          ? `Parcela ${it.parcela}/${preview.n} — ${clienteAtual || "cobrança"}`
+          : `Cobrança — ${clienteAtual || "cliente"}`,
       ...(preview.n > 1
         ? { parcela: it.parcela, totalParcelas: preview.n, grupoId }
         : {}),
@@ -151,9 +161,9 @@ export default function BoletosPage() {
       description:
         preview.n > 1
           ? `${preview.n}x de ${formatCurrency(preview.itens[0].valor)} para ${
-              form.cliente || "cliente"
+              clienteAtual || "cliente"
             } (total ${formatCurrency(preview.total)}).`
-          : `${formatCurrency(preview.total)} para ${form.cliente || "cliente"}.`,
+          : `${formatCurrency(preview.total)} para ${clienteAtual || "cliente"}.`,
     });
   };
 
@@ -443,30 +453,48 @@ export default function BoletosPage() {
         }
       >
         <form id="form-emitir-cobranca" onSubmit={handleEmitir} className="space-y-4">
-          <Field label="Cliente">
-            <Input
-              required
-              value={form.cliente}
-              onChange={(e) => setField("cliente", e.target.value)}
-              placeholder="Nome do cliente"
-            />
-          </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Empresa">
-              <Input
-                value={form.empresaNome}
-                onChange={(e) => setField("empresaNome", e.target.value)}
-                placeholder="Ex.: Eleven"
-              />
+              <Select
+                required
+                value={form.empresaId}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, empresaId: e.target.value, processoId: "" }))
+                }
+              >
+                <option value="" disabled>
+                  Selecione a empresa
+                </option>
+                {empresas.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nomeFantasia} · {emp.cnpj}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field label="Processo" hint="Opcional">
-              <Input
-                value={form.processoNumero}
-                onChange={(e) => setField("processoNumero", e.target.value)}
-                placeholder="IMP-001"
-              />
+            <Field
+              label="Processo"
+              hint={form.empresaId ? "Opcional" : "Escolha a empresa primeiro"}
+            >
+              <Select
+                value={form.processoId}
+                onChange={(e) => setField("processoId", e.target.value)}
+                disabled={!form.empresaId}
+              >
+                <option value="">
+                  {form.empresaId ? "Sem processo específico" : "—"}
+                </option>
+                {processosDaEmpresa.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.numeroInterno} · {p.bl}
+                  </option>
+                ))}
+              </Select>
             </Field>
           </div>
+          <Field label="Cliente" hint="Preenchido automaticamente pela empresa">
+            <Input value={clienteAtual} readOnly placeholder="Selecione a empresa" className="bg-slate-50 text-slate-500" />
+          </Field>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Valor total (R$)">
               <Input
