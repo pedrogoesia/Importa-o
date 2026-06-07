@@ -377,9 +377,24 @@ export function ProcessoDetail({ id }: { id: string }) {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{p.numeroInterno}</h1>
             <StatusBadge status={p.status} />
           </div>
-          <p className="text-sm text-slate-500">
-            {p.empresaNome} · {p.cliente} · {p.bl} · {p.container}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <Link
+              href={`/empresas/${p.empresaId}`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-0.5 font-medium text-brand-700 transition hover:bg-brand-100"
+            >
+              <Building2 className="h-3.5 w-3.5" /> {p.empresaNome}
+            </Link>
+            <span className="text-slate-300">·</span>
+            <span>
+              Cliente <span className="text-slate-700">{p.cliente}</span>
+            </span>
+            <span className="text-slate-300">·</span>
+            <span>{p.cnpj}</span>
+            <span className="text-slate-300">·</span>
+            <span>{p.bl}</span>
+            <span className="text-slate-300">·</span>
+            <span>{p.container}</span>
+          </div>
         </div>
         <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
           Etapa: {p.etapa}
