@@ -30,6 +30,7 @@ import { DocumentCard } from "@/components/ui/DocumentCard";
 import { Timeline } from "@/components/ui/Timeline";
 import { AICard } from "@/components/ui/AICard";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Processo, TimelineEvent, Boleto } from "@/types";
 
@@ -83,6 +84,7 @@ const boletoCols: Column<Boleto>[] = [
 ];
 
 export function ProcessoDetail({ id }: { id: string }) {
+  const toast = useToast();
   const p = getProcessoById(id);
   if (!p) return null;
 
@@ -347,7 +349,15 @@ export function ProcessoDetail({ id }: { id: string }) {
                 : "Documentação completa. ") +
               `Previsão de chegada em ${formatDate(p.dataChegada)}. Qualquer dúvida, estamos à disposição.`}
           </div>
-          <button className="mt-3 flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700">
+          <button
+            onClick={() =>
+              toast({
+                title: "Mensagem enviada",
+                description: `Atualização do ${p.numeroInterno} publicada no grupo interno.`,
+              })
+            }
+            className="mt-3 flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+          >
             <Send className="h-4 w-4" /> Enviar para o grupo
           </button>
         </div>

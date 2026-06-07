@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, Download, FileText, Bell } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { AlertCard } from "@/components/ui/AlertCard";
 import { Tabs } from "@/components/ui/Tabs";
+import { useToast } from "@/components/ui/Toast";
 import { relatorios, alertas } from "@/data/alertas";
 import { formatDate, cn } from "@/lib/utils";
 import type { Severity } from "@/types";
@@ -40,6 +41,7 @@ function AlertList({ severity }: { severity: Severity }) {
 }
 
 export default function RelatoriosPage() {
+  const toast = useToast();
   const [tab, setTab] = useState<"relatorios" | "alertas">("relatorios");
 
   return (
@@ -85,7 +87,15 @@ export default function RelatoriosPage() {
                 <span className="text-xs text-slate-400">
                   {r.periodo} · {formatDate(r.geradoEm)}
                 </span>
-                <button className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700">
+                <button
+                  onClick={() =>
+                    toast({
+                      title: "Relatório gerado",
+                      description: `${r.titulo} (${r.periodo}) pronto para download em PDF.`,
+                    })
+                  }
+                  className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+                >
                   <Download className="h-3.5 w-3.5" /> Gerar
                 </button>
               </div>

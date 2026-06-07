@@ -14,13 +14,33 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { AICard } from "@/components/ui/AICard";
 import { StatCard } from "@/components/ui/StatCard";
+import { useToast } from "@/components/ui/Toast";
 import { cargaSnapshots, relatorioCargaIa } from "@/data/cargas";
 import { formatDate, cn } from "@/lib/utils";
 
 export default function CargasPage() {
+  const toast = useToast();
   const [sent, setSent] = useState(false);
+  const [consultando, setConsultando] = useState(false);
   const mudancas = cargaSnapshots.filter((s) => s.mudou);
   const datas = Array.from(new Set(cargaSnapshots.map((s) => s.data)));
+
+  const handleConsultar = () => {
+    if (consultando) return;
+    setConsultando(true);
+    toast({
+      title: "Consultando Siscomex / Siscarga…",
+      description: "Coletando atualizações dos CNPJs monitorados.",
+      tone: "info",
+    });
+    setTimeout(() => {
+      setConsultando(false);
+      toast({
+        title: "Consulta concluída",
+        description: `${mudancas.length} mudança(s) detectada(s) desde a última consulta.`,
+      });
+    }, 1800);
+  };
 
   return (
     <div className="space-y-6">
@@ -28,9 +48,13 @@ export default function CargasPage() {
         title="Atualizações de carga"
         description="Acompanhamento automático via Siscomex / Siscarga · snapshots diários"
         action={
-          <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
-            <RefreshCw className="h-4 w-4" />
-            Consultar agora
+          <button
+            onClick={handleConsultar}
+            disabled={consultando}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+          >
+            <RefreshCw className={cn("h-4 w-4", consultando && "animate-spin")} />
+            {consultando ? "Consultando…" : "Consultar agora"}
           </button>
         }
       />
@@ -70,7 +94,14 @@ export default function CargasPage() {
         title="Relatório automático de cargas"
         action={
           <button
-            onClick={() => setSent(true)}
+            onClick={() => {
+              if (sent) return;
+              setSent(true);
+              toast({
+                title: "Relatório enviado",
+                description: "Resumo de cargas publicado no grupo interno do WhatsApp.",
+              });
+            }}
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
               sent

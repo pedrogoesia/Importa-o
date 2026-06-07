@@ -1,3 +1,5 @@
+"use client";
+
 import {
   FileText,
   Sparkles,
@@ -6,9 +8,11 @@ import {
 } from "lucide-react";
 import type { Documento } from "@/types";
 import { StatusBadge } from "./StatusBadge";
+import { useToast } from "./Toast";
 import { formatDate } from "@/lib/utils";
 
 export function DocumentCard({ documento }: { documento: Documento }) {
+  const toast = useToast();
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card transition hover:shadow-card-hover">
       <div className="flex items-start gap-3">
@@ -68,7 +72,16 @@ export function DocumentCard({ documento }: { documento: Documento }) {
         ))}
       </div>
 
-      <button className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50">
+      <button
+        onClick={() =>
+          toast({
+            title: "Download iniciado",
+            description: `${documento.nome} está sendo baixado.`,
+            tone: "info",
+          })
+        }
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+      >
         <Download className="h-3.5 w-3.5" />
         Baixar documento
       </button>
