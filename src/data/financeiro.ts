@@ -236,6 +236,34 @@ export const boletos: Boleto[] = [
     status: "criado",
     descricao: "Adiantamento de serviços - IMP-004",
   },
+  // Exemplo de cobrança parcelada: 6x de R$ 15.000 (IGCD · IMP-006)
+  ...(
+    [
+      { n: 1, venc: "2026-03-15", status: "pago", pagoEm: "2026-03-14" },
+      { n: 2, venc: "2026-04-15", status: "pago", pagoEm: "2026-04-15" },
+      { n: 3, venc: "2026-05-15", status: "vencido" },
+      { n: 4, venc: "2026-06-15", status: "vencendo" },
+      { n: 5, venc: "2026-07-15", status: "enviado" },
+      { n: 6, venc: "2026-08-15", status: "criado" },
+    ] as const
+  ).map((p) => ({
+    id: `bol-pc-${p.n}`,
+    numero: `23793.38128 60082.560213 95000.06330${p.n} 9925000001500${p.n}`,
+    empresaId: "emp-igcd",
+    empresaNome: "IGCD",
+    processoId: "imp-006",
+    processoNumero: "IMP-006",
+    cliente: "IGCD Holding",
+    valor: 15_000,
+    emissao: "2026-03-10",
+    vencimento: p.venc,
+    status: p.status,
+    descricao: `Parcela ${p.n}/6 — serviços de importação IMP-006`,
+    parcela: p.n,
+    totalParcelas: 6,
+    grupoId: "cob-igcd-006",
+    pagoEm: "pagoEm" in p ? p.pagoEm : undefined,
+  })),
 ];
 
 // Aggregations for the monthly closing view

@@ -150,6 +150,11 @@ export interface Boleto {
   vencimento: string;
   status: BoletoStatus;
   descricao: string;
+  // Parcelamento (cobrança dividida em N boletos)
+  parcela?: number;
+  totalParcelas?: number;
+  grupoId?: ID;
+  pagoEm?: string;
 }
 
 export type TransacaoTipo = "entrada" | "saida";
