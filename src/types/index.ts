@@ -191,9 +191,11 @@ export interface ContaPagar {
   fornecedor: string;
   empresaNome: string;
   processoNumero?: string;
+  categoria?: string;
   valor: number;
   vencimento: string;
   status: ContaStatus;
+  recorrente?: boolean;
 }
 
 export type CustoCategoria =

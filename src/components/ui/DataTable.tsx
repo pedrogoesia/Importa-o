@@ -14,11 +14,13 @@ export function DataTable<T extends { id: string }>({
   columns,
   rows,
   onRowHref,
+  onRowClick,
   empty,
 }: {
   columns: Column<T>[];
   rows: T[];
   onRowHref?: (row: T) => string;
+  onRowClick?: (row: T) => void;
   empty?: React.ReactNode;
 }) {
   if (rows.length === 0 && empty) {
@@ -49,19 +51,21 @@ export function DataTable<T extends { id: string }>({
           <tbody className="divide-y divide-slate-50">
             {rows.map((row) => {
               const href = onRowHref?.(row);
-              const RowTag = href ? "a" : "div";
+              const clickable = !!href || !!onRowClick;
               return (
                 <tr
                   key={row.id}
                   className={cn(
                     "transition-colors",
-                    href && "cursor-pointer hover:bg-slate-50/70"
+                    clickable && "cursor-pointer hover:bg-slate-50/70"
                   )}
                   onClick={
                     href
                       ? () => {
                           window.location.href = href;
                         }
+                      : onRowClick
+                      ? () => onRowClick(row)
                       : undefined
                   }
                 >

@@ -21,6 +21,9 @@ import {
   Landmark,
   LineChart as LineChartIcon,
   ChevronDown,
+  CalendarDays,
+  List,
+  Repeat,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -35,6 +38,7 @@ import { LineChart } from "@/components/ui/LineChart";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, PrimaryButton, GhostButton } from "@/components/ui/Form";
 import { EmpresaMultiSelect } from "@/components/ui/EmpresaMultiSelect";
+import { Calendar, type CalendarEvent } from "@/components/ui/Calendar";
 import { useToast } from "@/components/ui/Toast";
 import {
   transacoes as transacoesSeed,
@@ -53,6 +57,56 @@ function addDaysISO(iso: string, days: number) {
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
+}
+function addMonthsISO(iso: string, months: number) {
+  const d = new Date(iso + "T00:00:00");
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+/** Valor compacto para caber nas células do calendário (ex.: 12,5k). */
+const kBRL = (v: number) => {
+  const a = Math.abs(v);
+  if (a >= 1000) return `R$${(a / 1000).toFixed(a >= 10000 ? 0 : 1).replace(".", ",")}k`;
+  return `R$${Math.round(a)}`;
+};
+
+function DetalheItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-slate-400">{label}</p>
+      <div className="mt-0.5 text-sm font-medium text-slate-800">{value}</div>
+    </div>
+  );
+}
+
+function ViewToggle({
+  value,
+  onChange,
+}: {
+  value: "lista" | "calendario";
+  onChange: (v: "lista" | "calendario") => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
+      {(
+        [
+          { id: "lista", label: "Lista", icon: List },
+          { id: "calendario", label: "Calendário", icon: CalendarDays },
+        ] as const
+      ).map((v) => (
+        <button
+          key={v.id}
+          onClick={() => onChange(v.id)}
+          className={cn(
+            "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition",
+            value === v.id ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:text-slate-600"
+          )}
+        >
+          <v.icon className="h-3.5 w-3.5" /> {v.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 const empresaNomes = empresas.map((e) => e.nomeFantasia);
@@ -90,13 +144,20 @@ export default function FinanceiroPage() {
   // Contas a pagar toolbar
   const [contaQuick, setContaQuick] = useState<"todas" | "atraso" | "hoje" | "semana">("todas");
   const [contaSearch, setContaSearch] = useState("");
+  const [contaView, setContaView] = useState<"lista" | "calendario">("lista");
+  const [receberTabView, setReceberTabView] = useState<"lista" | "calendario">("lista");
+  const [detalheConta, setDetalheConta] = useState<ContaPagar | null>(null);
+  const [detalheBoleto, setDetalheBoleto] = useState<Boleto | null>(null);
   const [novaContaOpen, setNovaContaOpen] = useState(false);
   const [contaForm, setContaForm] = useState({
     descricao: "",
     fornecedor: "",
     empresaNome: empresaNomes[0] ?? "",
+    categoria: "",
     valor: "",
     vencimento: "",
+    recorrente: false,
+    meses: "12",
   });
 
   // Conciliação toolbar
@@ -197,21 +258,44 @@ export default function FinanceiroPage() {
     toast({ title: "Transação conciliada", description: t.descricao, tone: "info" });
   };
 
+  const resetContaForm = () =>
+    setContaForm({
+      descricao: "",
+      fornecedor: "",
+      empresaNome: empresaNomes[0] ?? "",
+      categoria: "",
+      valor: "",
+      vencimento: "",
+      recorrente: false,
+      meses: "12",
+    });
+
   const criarConta = (e: React.FormEvent) => {
     e.preventDefault();
-    const nova: ContaPagar = {
-      id: `cp-${Date.now()}`,
+    const valor = parseValor(contaForm.valor);
+    const venc0 = contaForm.vencimento || TODAY;
+    const grupo = `cpg-${Date.now()}`;
+    const n = contaForm.recorrente ? Math.min(Math.max(parseInt(contaForm.meses) || 1, 1), 36) : 1;
+    const novas: ContaPagar[] = Array.from({ length: n }).map((_, i) => ({
+      id: `${grupo}-${i}`,
       descricao: contaForm.descricao,
       fornecedor: contaForm.fornecedor || "—",
       empresaNome: contaForm.empresaNome,
-      valor: parseValor(contaForm.valor),
-      vencimento: contaForm.vencimento || new Date().toISOString().slice(0, 10),
+      categoria: contaForm.categoria || undefined,
+      valor,
+      vencimento: addMonthsISO(venc0, i),
       status: "em_aberto",
-    };
-    setContas((prev) => [nova, ...prev]);
+      recorrente: contaForm.recorrente || undefined,
+    }));
+    setContas((prev) => [...novas, ...prev]);
     setNovaContaOpen(false);
-    setContaForm({ descricao: "", fornecedor: "", empresaNome: empresaNomes[0] ?? "", valor: "", vencimento: "" });
-    toast({ title: "Conta cadastrada", description: `${nova.descricao} · ${formatCurrency(nova.valor)}.` });
+    resetContaForm();
+    toast({
+      title: contaForm.recorrente ? "Custo fixo cadastrado" : "Conta cadastrada",
+      description: contaForm.recorrente
+        ? `${contaForm.descricao} · ${formatCurrency(valor)}/mês por ${n} meses.`
+        : `${contaForm.descricao} · ${formatCurrency(valor)}.`,
+    });
   };
 
   const criarTx = (e: React.FormEvent) => {
@@ -273,7 +357,14 @@ export default function FinanceiroPage() {
       header: "Descrição",
       render: (c) => (
         <div>
-          <p className="font-medium text-slate-800">{c.descricao}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-medium text-slate-800">{c.descricao}</p>
+            {c.recorrente && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-600">
+                <Repeat className="h-2.5 w-2.5" /> Fixo
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-400">{c.fornecedor} · {c.empresaNome}</p>
         </div>
       ),
@@ -308,7 +399,10 @@ export default function FinanceiroPage() {
           </span>
         ) : (
           <button
-            onClick={() => pagarConta(c)}
+            onClick={(e) => {
+              e.stopPropagation();
+              pagarConta(c);
+            }}
             className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
           >
             Dar baixa
@@ -358,7 +452,10 @@ export default function FinanceiroPage() {
           </span>
         ) : (
           <button
-            onClick={() => receberBoleto(b)}
+            onClick={(e) => {
+              e.stopPropagation();
+              receberBoleto(b);
+            }}
             className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
           >
             Marcar recebido
@@ -555,6 +652,15 @@ export default function FinanceiroPage() {
     </div>
   );
 
+  const contaEvents: CalendarEvent[] = contasView.map((c) => ({
+    id: c.id,
+    date: c.vencimento,
+    label: c.descricao,
+    value: kBRL(c.valor),
+    tone: "pagar",
+    done: c.status === "paga",
+  }));
+
   const contasTab = (
     <Card>
       <CardHeader
@@ -562,36 +668,63 @@ export default function FinanceiroPage() {
         subtitle={`${contasFiltradas.filter((c) => c.status !== "paga").length} em aberto · ${formatCurrency(contasTotalFiltrado)}`}
         icon={Wallet}
         action={
-          <button
-            onClick={() => setNovaContaOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-brand-700"
-          >
-            <Plus className="h-3.5 w-3.5" /> Nova conta
-          </button>
+          <div className="flex items-center gap-2">
+            <ViewToggle value={contaView} onChange={setContaView} />
+            <button
+              onClick={() => setNovaContaOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-brand-700"
+            >
+              <Plus className="h-3.5 w-3.5" /> Nova conta
+            </button>
+          </div>
         }
       />
-      <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
-          <QuickChip id="todas" label="Todas" count={quickCounts.todas} />
-          <QuickChip id="atraso" label="Vencidas" count={quickCounts.atraso} />
-          <QuickChip id="hoje" label="Vence hoje" count={quickCounts.hoje} />
-          <QuickChip id="semana" label="Próx. 7 dias" count={quickCounts.semana} />
-        </div>
-        <div className="relative w-full lg:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            value={contaSearch}
-            onChange={(e) => setContaSearch(e.target.value)}
-            placeholder="Buscar conta, fornecedor ou empresa…"
-            className="pl-9"
+      {contaView === "lista" ? (
+        <>
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2">
+              <QuickChip id="todas" label="Todas" count={quickCounts.todas} />
+              <QuickChip id="atraso" label="Vencidas" count={quickCounts.atraso} />
+              <QuickChip id="hoje" label="Vence hoje" count={quickCounts.hoje} />
+              <QuickChip id="semana" label="Próx. 7 dias" count={quickCounts.semana} />
+            </div>
+            <div className="relative w-full lg:max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={contaSearch}
+                onChange={(e) => setContaSearch(e.target.value)}
+                placeholder="Buscar conta, fornecedor ou empresa…"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div className="p-1.5">
+            <DataTable columns={contaCols} rows={contasFiltradas} onRowClick={(c) => setDetalheConta(c)} />
+          </div>
+        </>
+      ) : (
+        <div className="p-5">
+          <Calendar
+            events={contaEvents}
+            today={TODAY}
+            onEventClick={(id) => {
+              const c = contasView.find((x) => x.id === id);
+              if (c) setDetalheConta(c);
+            }}
           />
         </div>
-      </div>
-      <div className="p-1.5">
-        <DataTable columns={contaCols} rows={contasFiltradas} />
-      </div>
+      )}
     </Card>
   );
+
+  const receberEvents: CalendarEvent[] = receberView.map((b) => ({
+    id: b.id,
+    date: b.vencimento,
+    label: b.cliente,
+    value: kBRL(b.valor),
+    tone: "receber",
+    done: b.status === "pago",
+  }));
 
   const receberTab = (
     <Card>
@@ -599,10 +732,24 @@ export default function FinanceiroPage() {
         title="Contas a receber"
         subtitle={`${receberAbertos.length} boleto(s) em aberto · ${formatCurrency(aReceberTotal)}`}
         icon={Receipt}
+        action={<ViewToggle value={receberTabView} onChange={setReceberTabView} />}
       />
-      <div className="p-1.5">
-        <DataTable columns={receberCols} rows={receberView} />
-      </div>
+      {receberTabView === "lista" ? (
+        <div className="p-1.5">
+          <DataTable columns={receberCols} rows={receberView} onRowClick={(b) => setDetalheBoleto(b)} />
+        </div>
+      ) : (
+        <div className="p-5">
+          <Calendar
+            events={receberEvents}
+            today={TODAY}
+            onEventClick={(id) => {
+              const b = receberView.find((x) => x.id === id);
+              if (b) setDetalheBoleto(b);
+            }}
+          />
+        </div>
+      )}
     </Card>
   );
 
@@ -1169,7 +1316,7 @@ export default function FinanceiroPage() {
                 placeholder="12.500,00"
               />
             </Field>
-            <Field label="Vencimento">
+            <Field label={contaForm.recorrente ? "1º vencimento" : "Vencimento"}>
               <Input
                 type="date"
                 required
@@ -1178,7 +1325,185 @@ export default function FinanceiroPage() {
               />
             </Field>
           </div>
+          <Field label="Categoria" hint="Opcional">
+            <Select
+              value={contaForm.categoria}
+              onChange={(e) => setContaForm((f) => ({ ...f, categoria: e.target.value }))}
+            >
+              <option value="">Sem categoria</option>
+              {["Frete internacional", "II/IPI", "ICMS", "AFRMM", "Despachante", "Armazenagem", "Demurrage", "Seguro", "Taxas Siscomex", "Aluguel", "Folha / salários", "Software / sistemas", "Contabilidade", "Outras"].map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          {/* Custo fixo mensal (recorrente) */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={contaForm.recorrente}
+                onChange={(e) => setContaForm((f) => ({ ...f, recorrente: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200"
+              />
+              <span>
+                <span className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                  <Repeat className="h-3.5 w-3.5 text-violet-500" /> Repetir todo mês (custo fixo)
+                </span>
+                <span className="text-xs text-slate-400">
+                  Gera um lançamento por mês com o mesmo valor (ex.: aluguel, salários, software).
+                </span>
+              </span>
+            </label>
+            {contaForm.recorrente && (
+              <div className="mt-3 flex items-center gap-2 pl-7">
+                <span className="text-xs text-slate-500">Repetir por</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={36}
+                  value={contaForm.meses}
+                  onChange={(e) => setContaForm((f) => ({ ...f, meses: e.target.value }))}
+                  className="w-20"
+                />
+                <span className="text-xs text-slate-500">meses</span>
+              </div>
+            )}
+          </div>
         </form>
+      </Modal>
+
+      {/* Modal: detalhe da conta a pagar */}
+      <Modal
+        open={!!detalheConta}
+        onClose={() => setDetalheConta(null)}
+        title="Detalhe da conta"
+        description={detalheConta?.descricao}
+        icon={Wallet}
+        footer={
+          detalheConta && detalheConta.status !== "paga" ? (
+            <>
+              <GhostButton type="button" onClick={() => setDetalheConta(null)}>
+                Fechar
+              </GhostButton>
+              <PrimaryButton
+                type="button"
+                onClick={() => {
+                  pagarConta(detalheConta);
+                  setDetalheConta(null);
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Dar baixa
+              </PrimaryButton>
+            </>
+          ) : (
+            <GhostButton type="button" onClick={() => setDetalheConta(null)}>
+              Fechar
+            </GhostButton>
+          )
+        }
+      >
+        {detalheConta && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+              <span className="text-sm text-slate-500">Valor</span>
+              <span className="text-lg font-semibold text-slate-900">{formatCurrency(detalheConta.valor)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <DetalheItem label="Status" value={<StatusBadge status={detalheConta.status} />} />
+              <DetalheItem label="Vencimento" value={formatDate(detalheConta.vencimento)} />
+              <DetalheItem label="Fornecedor" value={detalheConta.fornecedor} />
+              <DetalheItem label="Empresa" value={detalheConta.empresaNome} />
+              <DetalheItem label="Categoria" value={detalheConta.categoria ?? "—"} />
+              <DetalheItem label="Processo" value={detalheConta.processoNumero ?? "—"} />
+              <DetalheItem
+                label="Recorrência"
+                value={detalheConta.recorrente ? "Custo fixo mensal" : "Lançamento único"}
+              />
+              <DetalheItem
+                label="Situação do prazo"
+                value={
+                  detalheConta.status === "paga"
+                    ? "Quitada"
+                    : (() => {
+                        const d = daysUntil(detalheConta.vencimento);
+                        return d < 0 ? `${Math.abs(d)} dias em atraso` : d === 0 ? "Vence hoje" : `Vence em ${d} dias`;
+                      })()
+                }
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal: detalhe do boleto a receber */}
+      <Modal
+        open={!!detalheBoleto}
+        onClose={() => setDetalheBoleto(null)}
+        title="Detalhe do recebimento"
+        description={detalheBoleto ? `Boleto ${detalheBoleto.cliente}` : undefined}
+        icon={Receipt}
+        footer={
+          detalheBoleto && detalheBoleto.status !== "pago" && detalheBoleto.status !== "cancelado" ? (
+            <>
+              <GhostButton type="button" onClick={() => setDetalheBoleto(null)}>
+                Fechar
+              </GhostButton>
+              <PrimaryButton
+                type="button"
+                onClick={() => {
+                  receberBoleto(detalheBoleto);
+                  setDetalheBoleto(null);
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Marcar recebido
+              </PrimaryButton>
+            </>
+          ) : (
+            <GhostButton type="button" onClick={() => setDetalheBoleto(null)}>
+              Fechar
+            </GhostButton>
+          )
+        }
+      >
+        {detalheBoleto && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+              <span className="text-sm text-slate-500">Valor</span>
+              <span className="text-lg font-semibold text-slate-900">{formatCurrency(detalheBoleto.valor)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <DetalheItem label="Status" value={<StatusBadge status={detalheBoleto.status} />} />
+              <DetalheItem label="Cliente" value={detalheBoleto.cliente} />
+              <DetalheItem label="Empresa" value={detalheBoleto.empresaNome} />
+              <DetalheItem label="Processo" value={detalheBoleto.processoNumero ?? "—"} />
+              <DetalheItem label="Emissão" value={formatDate(detalheBoleto.emissao)} />
+              <DetalheItem label="Vencimento" value={formatDate(detalheBoleto.vencimento)} />
+              <DetalheItem
+                label="Parcela"
+                value={detalheBoleto.totalParcelas ? `${detalheBoleto.parcela}/${detalheBoleto.totalParcelas}` : "Única"}
+              />
+              <DetalheItem
+                label={detalheBoleto.status === "pago" ? "Pago em" : "Situação do prazo"}
+                value={
+                  detalheBoleto.status === "pago"
+                    ? detalheBoleto.pagoEm
+                      ? formatDate(detalheBoleto.pagoEm)
+                      : "—"
+                    : (() => {
+                        const d = daysUntil(detalheBoleto.vencimento);
+                        return d < 0 ? `${Math.abs(d)} dias em atraso` : d === 0 ? "Vence hoje" : `Vence em ${d} dias`;
+                      })()
+                }
+              />
+            </div>
+            <div className="rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500">
+              Linha digitável: <span className="font-mono text-slate-600">{detalheBoleto.numero}</span>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Modal: novo lançamento */}
