@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
   Search,
   Scale,
+  Landmark,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -30,6 +31,7 @@ import { DonutChart } from "@/components/ui/DonutChart";
 import { BarChart } from "@/components/ui/BarChart";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, PrimaryButton, GhostButton } from "@/components/ui/Form";
+import { EmpresaMultiSelect } from "@/components/ui/EmpresaMultiSelect";
 import { useToast } from "@/components/ui/Toast";
 import {
   transacoes as transacoesSeed,
@@ -43,6 +45,7 @@ import { formatCurrency, formatDate, daysUntil, cn } from "@/lib/utils";
 import type { Transacao, ContaPagar, Boleto } from "@/types";
 
 const empresaNomes = empresas.map((e) => e.nomeFantasia);
+const empOptions = empresas.map((e) => ({ value: e.nomeFantasia, label: e.nomeFantasia }));
 
 /** Visual urgency hint for an unpaid due date. */
 function urgencia(vencimento: string) {
@@ -59,6 +62,14 @@ export default function FinanceiroPage() {
   const [contas, setContas] = useState<ContaPagar[]>(contasPagarSeed);
   const [receber, setReceber] = useState<Boleto[]>(boletosSeed);
   const [txs, setTxs] = useState<Transacao[]>(transacoesSeed);
+
+  // Seleção de empresas (vazio = todas) — aplica a toda a tela
+  const [empSel, setEmpSel] = useState<string[]>([]);
+  const inScope = (nome: string) => empSel.length === 0 || empSel.includes(nome);
+  const empresasView = empresas.filter((e) => inScope(e.nomeFantasia));
+  const ofConectadas = empresasView.filter(
+    (e) => e.integracoes?.openFinance === "conectado"
+  ).length;
 
   // Contas a pagar toolbar
   const [contaQuick, setContaQuick] = useState<"todas" | "atraso" | "hoje" | "semana">("todas");
@@ -86,17 +97,22 @@ export default function FinanceiroPage() {
   const parseValor = (v: string) =>
     parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
 
-  // ---- Derived (live) figures ----
-  const entradas = txs.filter((t) => t.tipo === "entrada").reduce((s, t) => s + t.valor, 0);
-  const saidas = txs.filter((t) => t.tipo === "saida").reduce((s, t) => s + t.valor, 0);
+  // ---- Arrays no escopo das empresas selecionadas ----
+  const contasView = useMemo(() => contas.filter((c) => inScope(c.empresaNome)), [contas, empSel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const receberView = useMemo(() => receber.filter((b) => inScope(b.empresaNome)), [receber, empSel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const txsView = useMemo(() => txs.filter((t) => inScope(t.empresaNome)), [txs, empSel]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const contasAbertas = contas.filter((c) => c.status !== "paga");
+  // ---- Derived (live) figures ----
+  const entradas = txsView.filter((t) => t.tipo === "entrada").reduce((s, t) => s + t.valor, 0);
+  const saidas = txsView.filter((t) => t.tipo === "saida").reduce((s, t) => s + t.valor, 0);
+
+  const contasAbertas = contasView.filter((c) => c.status !== "paga");
   const aPagarTotal = contasAbertas.reduce((s, c) => s + c.valor, 0);
   const aPagarAtraso = contasAbertas
     .filter((c) => daysUntil(c.vencimento) < 0)
     .reduce((s, c) => s + c.valor, 0);
 
-  const receberAbertos = receber.filter((b) => b.status !== "pago" && b.status !== "cancelado");
+  const receberAbertos = receberView.filter((b) => b.status !== "pago" && b.status !== "cancelado");
   const aReceberTotal = receberAbertos.reduce((s, b) => s + b.valor, 0);
   const aReceberAtraso = receberAbertos
     .filter((b) => daysUntil(b.vencimento) < 0)
@@ -105,7 +121,7 @@ export default function FinanceiroPage() {
   const despesasPorCategoria = useMemo(
     () =>
       Object.entries(
-        txs
+        txsView
           .filter((t) => t.tipo === "saida")
           .reduce<Record<string, number>>((acc, t) => {
             acc[t.categoria] = (acc[t.categoria] ?? 0) + t.valor;
@@ -114,7 +130,7 @@ export default function FinanceiroPage() {
       )
         .map(([label, value]) => ({ label, value, color: "#6366f1" }))
         .sort((a, b) => b.value - a.value),
-    [txs]
+    [txsView]
   );
 
   // Agenda: próximos 10 dias (a pagar + a receber)
@@ -203,7 +219,7 @@ export default function FinanceiroPage() {
   // ---- Filtered lists ----
   const contasFiltradas = useMemo(() => {
     const q = contaSearch.toLowerCase();
-    return contas
+    return contasView
       .filter((c) => {
         const matchSearch =
           !q ||
@@ -219,20 +235,20 @@ export default function FinanceiroPage() {
         return true;
       })
       .sort((a, b) => +new Date(a.vencimento) - +new Date(b.vencimento));
-  }, [contas, contaSearch, contaQuick]);
+  }, [contasView, contaSearch, contaQuick]);
 
   const contasTotalFiltrado = contasFiltradas
     .filter((c) => c.status !== "paga")
     .reduce((s, c) => s + c.valor, 0);
 
   const txFiltradas = useMemo(() => {
-    return txs.filter((t) => {
+    return txsView.filter((t) => {
       if (txFiltro === "entrada") return t.tipo === "entrada";
       if (txFiltro === "saida") return t.tipo === "saida";
       if (txFiltro === "pendente") return !t.conciliada;
       return true;
     });
-  }, [txs, txFiltro]);
+  }, [txsView, txFiltro]);
 
   // ---- Column defs ----
   const contaCols: Column<ContaPagar>[] = [
@@ -409,7 +425,7 @@ export default function FinanceiroPage() {
   );
 
   const quickCounts = {
-    todas: contas.length,
+    todas: contasView.length,
     atraso: contasAbertas.filter((c) => daysUntil(c.vencimento) < 0).length,
     hoje: contasAbertas.filter((c) => daysUntil(c.vencimento) === 0).length,
     semana: contasAbertas.filter((c) => {
@@ -569,7 +585,7 @@ export default function FinanceiroPage() {
         icon={Receipt}
       />
       <div className="p-1.5">
-        <DataTable columns={receberCols} rows={receber} />
+        <DataTable columns={receberCols} rows={receberView} />
       </div>
     </Card>
   );
@@ -578,7 +594,7 @@ export default function FinanceiroPage() {
     <Card>
       <CardHeader
         title="Conciliação bancária"
-        subtitle="Preparado para Open Finance · concilie lançamentos com o extrato"
+        subtitle={`Open Finance · ${ofConectadas}/${empresasView.length} empresa(s) conectada(s) · concilie com o extrato`}
         icon={Banknote}
         action={
           <button
@@ -620,13 +636,14 @@ export default function FinanceiroPage() {
 
   const porEmpresa = (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {empresas.map((e) => {
+      {empresasView.map((e) => {
         const txEmp = txs.filter((t) => t.empresaNome === e.nomeFantasia);
         const entrada = txEmp.filter((t) => t.tipo === "entrada").reduce((s, t) => s + t.valor, 0);
         const saida = txEmp.filter((t) => t.tipo === "saida").reduce((s, t) => s + t.valor, 0);
         const abertoEmp = contas
           .filter((c) => c.empresaNome === e.nomeFantasia && c.status !== "paga")
           .reduce((s, c) => s + c.valor, 0);
+        const of = e.integracoes?.openFinance;
         return (
           <Card key={e.id}>
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
@@ -637,11 +654,24 @@ export default function FinanceiroPage() {
                 <p className="text-sm font-semibold text-slate-900">{e.nomeFantasia}</p>
                 <p className="text-xs text-slate-400">{e.cnpj}</p>
               </div>
-              {abertoEmp > 0 && (
-                <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
-                  {formatCurrency(abertoEmp)} a pagar
-                </span>
-              )}
+              <div className="flex flex-col items-end gap-1">
+                {of && (
+                  <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <Landmark className="h-3 w-3" /> Open Finance
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        of === "conectado" ? "bg-emerald-500" : of === "pendente" ? "bg-amber-500" : "bg-slate-300"
+                      )}
+                    />
+                  </span>
+                )}
+                {abertoEmp > 0 && (
+                  <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+                    {formatCurrency(abertoEmp)} a pagar
+                  </span>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-3 divide-x divide-slate-100">
               <div className="p-4">
@@ -724,6 +754,22 @@ export default function FinanceiroPage() {
         title="Financeiro"
         description="Operação financeira do dia a dia: contas a pagar e receber, conciliação e fechamento"
       />
+
+      <div className="mb-6 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-card sm:flex-row sm:items-center sm:gap-3">
+        <span className="text-sm font-medium text-slate-600">Empresas:</span>
+        <EmpresaMultiSelect
+          options={empOptions}
+          selected={empSel}
+          onChange={setEmpSel}
+          className="w-full sm:w-72"
+        />
+        <span className="text-xs text-slate-400 sm:ml-auto">
+          {empSel.length === 0
+            ? `Exibindo todas as ${empresas.length} empresas`
+            : `Filtrando ${empSel.length} de ${empresas.length} empresas`}
+        </span>
+      </div>
+
       <Tabs
         tabs={[
           { key: "geral", label: "Visão geral", content: geral },

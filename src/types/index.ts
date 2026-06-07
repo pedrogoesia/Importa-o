@@ -20,6 +20,17 @@ export interface Socio {
   participacao?: string;
 }
 
+export type IntegracaoStatus = "conectado" | "pendente" | "nao_configurado";
+
+/** Integrações disponíveis por empresa/CNPJ. */
+export interface EmpresaIntegracoes {
+  openFinance: IntegracaoStatus;
+  banco?: string;
+  boleto: IntegracaoStatus;
+  convenioBoleto?: string;
+  nfe: IntegracaoStatus;
+}
+
 export interface Empresa {
   id: ID;
   razaoSocial: string;
@@ -45,6 +56,7 @@ export interface Empresa {
   certificadoVinculado: string;
   dataAbertura: string;
   observacoes: string;
+  integracoes?: EmpresaIntegracoes;
 }
 
 export type ProcessoStatus =

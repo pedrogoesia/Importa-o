@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { ProcessCard } from "@/components/ui/ProcessCard";
 import { DocumentCard } from "@/components/ui/DocumentCard";
+import { IntegracoesCard } from "@/components/empresa/IntegracoesCard";
 import { formatDate } from "@/lib/utils";
 
 export function generateStaticParams() {
@@ -154,6 +155,8 @@ export default function EmpresaDetailPage({
               ))}
             </div>
           </Card>
+
+          <IntegracoesCard empresa={empresa} />
 
           <Card>
             <CardHeader title="Certificado digital" icon={ShieldCheck} />

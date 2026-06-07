@@ -30,6 +30,13 @@ export const empresas: Empresa[] = [
     dataAbertura: "2015-03-12",
     observacoes:
       "Cliente estratégico, alto volume de importação de eletrônicos da Ásia.",
+    integracoes: {
+      openFinance: "conectado",
+      banco: "Itaú",
+      boleto: "conectado",
+      convenioBoleto: "Itaú · convênio 123456",
+      nfe: "conectado",
+    },
   },
   {
     id: "emp-igcd",
@@ -59,6 +66,13 @@ export const empresas: Empresa[] = [
     dataAbertura: "2018-09-01",
     observacoes:
       "Opera majoritariamente por Itajaí e Navegantes. Usa benefício de SC.",
+    integracoes: {
+      openFinance: "conectado",
+      banco: "Banco do Brasil",
+      boleto: "conectado",
+      convenioBoleto: "BB · convênio 778899",
+      nfe: "pendente",
+    },
   },
   {
     id: "emp-ms",
@@ -88,6 +102,13 @@ export const empresas: Empresa[] = [
     certificadoVinculado: "e-CNPJ M&S (val. 18/06/2026)",
     dataAbertura: "2016-11-25",
     observacoes: "Importação de autopeças e máquinas. Benefício FUNDAP ativo.",
+    integracoes: {
+      openFinance: "pendente",
+      banco: "Santander",
+      boleto: "conectado",
+      convenioBoleto: "Santander · convênio 445566",
+      nfe: "conectado",
+    },
   },
   {
     id: "emp-nordix",
@@ -118,6 +139,11 @@ export const empresas: Empresa[] = [
     dataAbertura: "2020-02-14",
     observacoes:
       "Habilitação RADAR em revisão. Certificado vencendo nos próximos dias.",
+    integracoes: {
+      openFinance: "nao_configurado",
+      boleto: "nao_configurado",
+      nfe: "nao_configurado",
+    },
   },
 ];
 

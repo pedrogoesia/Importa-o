@@ -24,8 +24,10 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, PrimaryButton, GhostButton } from "@/components/ui/Form";
+import { EmpresaMultiSelect } from "@/components/ui/EmpresaMultiSelect";
 import { useToast } from "@/components/ui/Toast";
 import { boletos as boletosSeed } from "@/data/financeiro";
+import { empresas } from "@/data/empresas";
 import { formatCurrency, formatDate, daysUntil, cn } from "@/lib/utils";
 import type { Boleto } from "@/types";
 
@@ -42,6 +44,8 @@ function addDaysISO(iso: string, days: number) {
 
 const isAberto = (b: Boleto) => b.status !== "pago" && b.status !== "cancelado";
 
+const empOptions = empresas.map((e) => ({ value: e.nomeFantasia, label: e.nomeFantasia }));
+
 const emptyForm = {
   cliente: "",
   empresaNome: "",
@@ -57,6 +61,7 @@ export default function BoletosPage() {
   const [boletos, setBoletos] = useState<Boleto[]>(boletosSeed);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [empSel, setEmpSel] = useState<string[]>([]);
   const [view, setView] = useState<"lista" | "cobrancas">("cobrancas");
   const [open, setOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -153,16 +158,22 @@ export default function BoletosPage() {
   };
 
   // ---- Filtering ----
+  // Escopo por empresa selecionada (vazio = todas) — aplica a KPIs, listas e relatório
+  const boletosScope = useMemo(
+    () => boletos.filter((b) => empSel.length === 0 || empSel.includes(b.empresaNome)),
+    [boletos, empSel]
+  );
+
   const bySearch = useMemo(() => {
     const q = search.toLowerCase();
-    return boletos.filter(
+    return boletosScope.filter(
       (b) =>
         !q ||
         b.cliente.toLowerCase().includes(q) ||
         b.empresaNome.toLowerCase().includes(q) ||
         (b.processoNumero ?? "").toLowerCase().includes(q)
     );
-  }, [boletos, search]);
+  }, [boletosScope, search]);
 
   const rows = useMemo(
     () => bySearch.filter((b) => !filters.status || b.status === filters.status),
@@ -202,13 +213,13 @@ export default function BoletosPage() {
       .sort((a, b) => b.vencidas - a.vencidas || b.total - a.total);
   }, [bySearch]);
 
-  // ---- KPIs (live) ----
-  const totalEmitido = boletos.reduce((s, b) => s + b.valor, 0);
-  const pagos = boletos.filter((b) => b.status === "pago");
+  // ---- KPIs (live, no escopo das empresas) ----
+  const totalEmitido = boletosScope.reduce((s, b) => s + b.valor, 0);
+  const pagos = boletosScope.filter((b) => b.status === "pago");
   const recebido = pagos.reduce((s, b) => s + b.valor, 0);
-  const abertos = boletos.filter(isAberto);
+  const abertos = boletosScope.filter(isAberto);
   const aReceber = abertos.reduce((s, b) => s + b.valor, 0);
-  const vencidos = boletos.filter((b) => b.status === "vencido");
+  const vencidos = boletosScope.filter((b) => b.status === "vencido");
   const inadimplencia = vencidos.reduce((s, b) => s + b.valor, 0);
   const taxaRecebimento = totalEmitido ? Math.round((recebido / totalEmitido) * 100) : 0;
 
@@ -334,38 +345,46 @@ export default function BoletosPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total emitido" value={formatCurrency(totalEmitido)} icon={Receipt} tone="brand" hint={`${boletos.length} boletos`} />
+        <StatCard label="Total emitido" value={formatCurrency(totalEmitido)} icon={Receipt} tone="brand" hint={`${boletosScope.length} boletos`} />
         <StatCard label="Recebido" value={formatCurrency(recebido)} icon={CheckCircle2} tone="emerald" hint={`${taxaRecebimento}% · ${pagos.length} pagos`} />
         <StatCard label="A receber em aberto" value={formatCurrency(aReceber)} icon={Clock} tone="amber" hint={`${abertos.length} boletos`} />
         <StatCard label="Inadimplência" value={formatCurrency(inadimplencia)} icon={AlertTriangle} tone="rose" hint={`${vencidos.length} vencidos`} />
       </div>
 
-      <FilterBar
-        search={search}
-        onSearch={setSearch}
-        searchPlaceholder="Buscar por cliente, empresa ou processo…"
-        values={filters}
-        onFilterChange={(k, v) => setFilters((f) => ({ ...f, [k]: v }))}
-        filters={
-          view === "lista"
-            ? [
-                {
-                  key: "status",
-                  label: "Status",
-                  options: [
-                    { label: "Criado", value: "criado" },
-                    { label: "Enviado", value: "enviado" },
-                    { label: "Aguardando", value: "aguardando_pagamento" },
-                    { label: "Vencendo", value: "vencendo" },
-                    { label: "Vencido", value: "vencido" },
-                    { label: "Pago", value: "pago" },
-                  ],
-                },
-              ]
-            : []
-        }
-        className="mb-0 flex-1"
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <EmpresaMultiSelect
+          options={empOptions}
+          selected={empSel}
+          onChange={setEmpSel}
+          className="w-full sm:w-64"
+        />
+        <FilterBar
+          search={search}
+          onSearch={setSearch}
+          searchPlaceholder="Buscar por cliente, empresa ou processo…"
+          values={filters}
+          onFilterChange={(k, v) => setFilters((f) => ({ ...f, [k]: v }))}
+          filters={
+            view === "lista"
+              ? [
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Criado", value: "criado" },
+                      { label: "Enviado", value: "enviado" },
+                      { label: "Aguardando", value: "aguardando_pagamento" },
+                      { label: "Vencendo", value: "vencendo" },
+                      { label: "Vencido", value: "vencido" },
+                      { label: "Pago", value: "pago" },
+                    ],
+                  },
+                ]
+              : []
+          }
+          className="mb-0 flex-1"
+        />
+      </div>
 
       <div className="-mt-2 flex justify-end">
         <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
