@@ -55,6 +55,12 @@ const statusMap: Record<string, { label: string; tone: Tone }> = {
   // Integrações
   conectado: { label: "Conectado", tone: "green" },
   nao_configurado: { label: "Não configurado", tone: "slate" },
+  // Radar
+  habilitado: { label: "Habilitado", tone: "green" },
+  em_habilitacao: { label: "Em habilitação", tone: "blue" },
+  revisao: { label: "Em revisão", tone: "amber" },
+  suspenso: { label: "Suspenso", tone: "red" },
+  recebido: { label: "Recebido", tone: "blue" },
   // Severity / alerta
   critico: { label: "Crítico", tone: "red" },
   atencao: { label: "Atenção", tone: "amber" },

@@ -257,6 +257,24 @@ export interface RadarRegistro {
   ultimoRegistro: string;
   dataLimite: string;
   observacoes: string;
+  modalidade?: RadarModalidade;
+  limite?: string;
+  situacao?: RadarSituacao;
+  etapas?: RadarEtapa[];
+  documentos?: RadarDocumentoItem[];
+}
+
+export type RadarModalidade = "Expressa" | "Limitada" | "Ilimitada";
+export type RadarSituacao = "habilitado" | "em_habilitacao" | "revisao" | "suspenso";
+export interface RadarEtapa {
+  id: string;
+  titulo: string;
+  feito: boolean;
+}
+export interface RadarDocumentoItem {
+  id: string;
+  nome: string;
+  status: "pendente" | "recebido" | "enviado";
 }
 
 export type CertificadoStatus = "valido" | "vencendo" | "vencido";
@@ -269,6 +287,10 @@ export interface Certificado {
   validade: string;
   status: CertificadoStatus;
   socioDespachante: string;
+  emissor?: string;
+  senha?: string;
+  documentoNome?: string;
+  emitidoEm?: string;
 }
 
 export interface IrpfRegistro {
