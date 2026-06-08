@@ -15,6 +15,8 @@ import {
   LayoutGrid,
   TrendingUp,
   Layers,
+  Trash2,
+  CalendarDays,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
@@ -66,9 +68,38 @@ export default function BoletosPage() {
   const [open, setOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [modo, setModo] = useState<"parcelado" | "avulso">("parcelado");
+  const [linhas, setLinhas] = useState<{ valor: string; vencimento: string }[]>([]);
 
   const setField = (k: keyof typeof form, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // ---- Vários boletos (avulso): linhas editáveis ----
+  const avulsoTotal = linhas.reduce((s, l) => s + parseValor(l.valor), 0);
+  const avulsoCount = linhas.filter((l) => parseValor(l.valor) > 0).length;
+  const dividirIgual = () => {
+    const total = parseValor(form.valorTotal);
+    const qtd = Math.min(Math.max(parseInt(form.parcelas) || 1, 1), 36);
+    const venc = form.primeiroVenc || TODAY;
+    const base = Math.floor((total / qtd) * 100) / 100;
+    const resto = Math.round((total - base * qtd) * 100) / 100;
+    setLinhas(
+      Array.from({ length: qtd }).map((_, i) => ({
+        valor: (i === qtd - 1 ? base + resto : base).toFixed(2).replace(".", ","),
+        vencimento: venc,
+      }))
+    );
+  };
+  const addLinha = () =>
+    setLinhas((l) => [...l, { valor: "", vencimento: form.primeiroVenc || TODAY }]);
+  const removeLinha = (i: number) => setLinhas((l) => l.filter((_, idx) => idx !== i));
+  const updateLinha = (i: number, k: "valor" | "vencimento", v: string) =>
+    setLinhas((l) => l.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
+  const resetEmitir = () => {
+    setForm(emptyForm);
+    setModo("parcelado");
+    setLinhas([]);
+  };
 
   // ---- Live preview of the installments ----
   const preview = useMemo(() => {
@@ -132,10 +163,25 @@ export default function BoletosPage() {
 
   const handleEmitir = (e: React.FormEvent) => {
     e.preventDefault();
+    // itens conforme o modo: parcelado (mensal/quinzenal/semanal) ou avulso (linhas editáveis)
+    const itens =
+      modo === "parcelado"
+        ? preview.itens
+        : linhas
+            .map((l, i) => ({ parcela: i + 1, valor: parseValor(l.valor), vencimento: l.vencimento || TODAY }))
+            .filter((it) => it.valor > 0);
+
+    if (itens.length === 0) {
+      toast({ title: "Informe ao menos um boleto", description: "Preencha o valor dos boletos.", tone: "warning" });
+      return;
+    }
+
     const grupoId = `cob-${Date.now()}`;
-    const novos: Boleto[] = preview.itens.map((it) => ({
-      id: `${grupoId}-${it.parcela}`,
-      numero: `${Math.floor(Math.random() * 90000 + 10000)}.${it.parcela}`,
+    const n = itens.length;
+    const total = itens.reduce((s, it) => s + it.valor, 0);
+    const novos: Boleto[] = itens.map((it, i) => ({
+      id: `${grupoId}-${i + 1}`,
+      numero: `${Math.floor(Math.random() * 90000 + 10000)}.${i + 1}`,
       empresaId: empresaSel?.id ?? "",
       empresaNome: empresaSel?.nomeFantasia ?? "—",
       processoId: processoSel?.id,
@@ -146,24 +192,22 @@ export default function BoletosPage() {
       vencimento: it.vencimento,
       status: "criado",
       descricao:
-        preview.n > 1
-          ? `Parcela ${it.parcela}/${preview.n} — ${clienteAtual || "cobrança"}`
+        n > 1
+          ? `${modo === "parcelado" ? "Parcela" : "Boleto"} ${i + 1}/${n} — ${clienteAtual || "cobrança"}`
           : `Cobrança — ${clienteAtual || "cliente"}`,
-      ...(preview.n > 1
-        ? { parcela: it.parcela, totalParcelas: preview.n, grupoId }
-        : {}),
+      ...(n > 1 ? { parcela: i + 1, totalParcelas: n, grupoId } : {}),
     }));
     setBoletos((prev) => [...novos, ...prev]);
     setOpen(false);
-    setForm(emptyForm);
+    resetEmitir();
     toast({
-      title: preview.n > 1 ? "Cobrança parcelada emitida" : "Boleto emitido",
-      description:
-        preview.n > 1
-          ? `${preview.n}x de ${formatCurrency(preview.itens[0].valor)} para ${
-              clienteAtual || "cliente"
-            } (total ${formatCurrency(preview.total)}).`
-          : `${formatCurrency(preview.total)} para ${clienteAtual || "cliente"}.`,
+      title:
+        n > 1
+          ? modo === "parcelado"
+            ? "Cobrança parcelada emitida"
+            : `${n} boletos emitidos`
+          : "Boleto emitido",
+      description: `${n > 1 ? `${n} boletos · ` : ""}total ${formatCurrency(total)} para ${clienteAtual || "cliente"}.`,
     });
   };
 
@@ -436,18 +480,33 @@ export default function BoletosPage() {
       {/* ===== Modal: emitir cobrança parcelada ===== */}
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          resetEmitir();
+        }}
         title="Emitir cobrança"
-        description="Divida o valor em parcelas e gere todos os boletos de uma vez"
+        description="Gere boletos parcelados ou vários boletos avulsos de uma vez"
         icon={Receipt}
         footer={
           <>
-            <GhostButton type="button" onClick={() => setOpen(false)}>
+            <GhostButton
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                resetEmitir();
+              }}
+            >
               Cancelar
             </GhostButton>
             <PrimaryButton type="submit" form="form-emitir-cobranca">
               <Plus className="h-4 w-4" />
-              {preview.n > 1 ? `Gerar ${preview.n} boletos` : "Emitir boleto"}
+              {modo === "parcelado"
+                ? preview.n > 1
+                  ? `Gerar ${preview.n} boletos`
+                  : "Emitir boleto"
+                : avulsoCount > 1
+                ? `Gerar ${avulsoCount} boletos`
+                : "Emitir boleto"}
             </PrimaryButton>
           </>
         }
@@ -495,71 +554,171 @@ export default function BoletosPage() {
           <Field label="Cliente" hint="Preenchido automaticamente pela empresa">
             <Input value={clienteAtual} readOnly placeholder="Selecione a empresa" className="bg-slate-50 text-slate-500" />
           </Field>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Valor total (R$)">
-              <Input
-                required
-                inputMode="decimal"
-                value={form.valorTotal}
-                onChange={(e) => setField("valorTotal", e.target.value)}
-                placeholder="100.000,00"
-              />
-            </Field>
-            <Field label="Parcelas">
-              <Input
-                type="number"
-                min={1}
-                max={36}
-                value={form.parcelas}
-                onChange={(e) => setField("parcelas", e.target.value)}
-              />
-            </Field>
-            <Field label="Intervalo">
-              <Select value={form.intervalo} onChange={(e) => setField("intervalo", e.target.value)}>
-                <option value="30">Mensal</option>
-                <option value="15">Quinzenal</option>
-                <option value="7">Semanal</option>
-              </Select>
-            </Field>
-          </div>
-          <Field label="1º vencimento">
-            <Input
-              type="date"
-              required
-              value={form.primeiroVenc}
-              onChange={(e) => setField("primeiroVenc", e.target.value)}
-            />
-          </Field>
 
-          {/* Live preview */}
-          {preview.total > 0 && (
-            <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-brand-700">
-                  <Layers className="h-4 w-4" />
-                  {preview.n > 1
-                    ? `${preview.n}x de ${formatCurrency(preview.itens[0].valor)}`
-                    : formatCurrency(preview.total)}
-                </span>
-                <span className="text-xs text-slate-500">
-                  Total {formatCurrency(preview.total)}
-                </span>
+          {/* Seletor de modo */}
+          <div>
+            <span className="mb-1.5 block text-xs font-medium text-slate-600">Tipo de cobrança</span>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { id: "parcelado", label: "Parcelado", sub: "1 valor em N parcelas", icon: Layers },
+                  { id: "avulso", label: "Vários boletos", sub: "datas/valores avulsos", icon: CalendarDays },
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setModo(m.id)}
+                  className={cn(
+                    "flex items-start gap-2 rounded-lg border p-3 text-left transition",
+                    modo === m.id ? "border-brand-300 bg-brand-50/60 ring-1 ring-brand-100" : "border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <m.icon className={cn("mt-0.5 h-4 w-4", modo === m.id ? "text-brand-600" : "text-slate-400")} />
+                  <span>
+                    <span className={cn("block text-sm font-medium", modo === m.id ? "text-brand-700" : "text-slate-700")}>{m.label}</span>
+                    <span className="block text-[11px] text-slate-400">{m.sub}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {modo === "parcelado" ? (
+            <>
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Valor total (R$)">
+                  <Input
+                    required
+                    inputMode="decimal"
+                    value={form.valorTotal}
+                    onChange={(e) => setField("valorTotal", e.target.value)}
+                    placeholder="100.000,00"
+                  />
+                </Field>
+                <Field label="Parcelas">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={36}
+                    value={form.parcelas}
+                    onChange={(e) => setField("parcelas", e.target.value)}
+                  />
+                </Field>
+                <Field label="Intervalo">
+                  <Select value={form.intervalo} onChange={(e) => setField("intervalo", e.target.value)}>
+                    <option value="30">Mensal</option>
+                    <option value="15">Quinzenal</option>
+                    <option value="7">Semanal</option>
+                  </Select>
+                </Field>
               </div>
-              <div className="max-h-40 space-y-1 overflow-y-auto scrollbar-thin">
-                {preview.itens.map((it) => (
-                  <div
-                    key={it.parcela}
-                    className="flex items-center justify-between rounded-md bg-white px-2.5 py-1.5 text-xs ring-1 ring-slate-100"
-                  >
-                    <span className="text-slate-500">
-                      {preview.n > 1 ? `Parcela ${it.parcela}/${preview.n}` : "Boleto único"}
+              <Field label="1º vencimento">
+                <Input
+                  type="date"
+                  required
+                  value={form.primeiroVenc}
+                  onChange={(e) => setField("primeiroVenc", e.target.value)}
+                />
+              </Field>
+
+              {preview.total > 0 && (
+                <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+                      <Layers className="h-4 w-4" />
+                      {preview.n > 1 ? `${preview.n}x de ${formatCurrency(preview.itens[0].valor)}` : formatCurrency(preview.total)}
                     </span>
-                    <span className="text-slate-400">{formatDate(it.vencimento)}</span>
-                    <span className="font-medium text-slate-700">{formatCurrency(it.valor)}</span>
+                    <span className="text-xs text-slate-500">Total {formatCurrency(preview.total)}</span>
+                  </div>
+                  <div className="max-h-40 space-y-1 overflow-y-auto scrollbar-thin">
+                    {preview.itens.map((it) => (
+                      <div key={it.parcela} className="flex items-center justify-between rounded-md bg-white px-2.5 py-1.5 text-xs ring-1 ring-slate-100">
+                        <span className="text-slate-500">{preview.n > 1 ? `Parcela ${it.parcela}/${preview.n}` : "Boleto único"}</span>
+                        <span className="text-slate-400">{formatDate(it.vencimento)}</span>
+                        <span className="font-medium text-slate-700">{formatCurrency(it.valor)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Divisão rápida (opcional) */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                <p className="mb-2 text-xs font-medium text-slate-500">Divisão rápida (opcional)</p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="flex-1">
+                    <span className="mb-1 block text-[11px] text-slate-400">Valor total</span>
+                    <Input inputMode="decimal" value={form.valorTotal} onChange={(e) => setField("valorTotal", e.target.value)} placeholder="100.000,00" />
+                  </label>
+                  <label className="w-20">
+                    <span className="mb-1 block text-[11px] text-slate-400">Qtd</span>
+                    <Input type="number" min={1} max={36} value={form.parcelas} onChange={(e) => setField("parcelas", e.target.value)} />
+                  </label>
+                  <label className="w-36">
+                    <span className="mb-1 block text-[11px] text-slate-400">Vencimento</span>
+                    <Input type="date" value={form.primeiroVenc} onChange={(e) => setField("primeiroVenc", e.target.value)} />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={dividirIgual}
+                    className="rounded-lg border border-brand-200 bg-white px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-50"
+                  >
+                    Dividir
+                  </button>
+                </div>
+              </div>
+
+              {/* Linhas editáveis */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-600">Boletos a gerar</span>
+                  <span className="text-xs text-slate-400">
+                    {avulsoCount} boleto(s) · total {formatCurrency(avulsoTotal)}
+                  </span>
+                </div>
+                {linhas.length === 0 && (
+                  <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400">
+                    Use a divisão rápida acima ou adicione boletos manualmente.
+                  </p>
+                )}
+                {linhas.map((l, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-6 shrink-0 text-center text-xs text-slate-400">{i + 1}</span>
+                    <Input
+                      inputMode="decimal"
+                      value={l.valor}
+                      onChange={(e) => updateLinha(i, "valor", e.target.value)}
+                      placeholder="Valor"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="date"
+                      value={l.vencimento}
+                      onChange={(e) => updateLinha(i, "vencimento", e.target.value)}
+                      className="w-40"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLinha(i)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+                      aria-label="Remover boleto"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={addLinha}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Adicionar boleto
+                </button>
               </div>
-            </div>
+            </>
           )}
         </form>
       </Modal>
