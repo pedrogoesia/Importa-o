@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Domain types for the Importa.AI operating system for import companies.
+// Domain types for the Escopo operating system for import companies.
 // All data is mocked but typed as if it came from a real backend/API.
 // ---------------------------------------------------------------------------
 

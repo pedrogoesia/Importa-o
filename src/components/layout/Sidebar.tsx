@@ -24,7 +24,7 @@ export function Sidebar() {
           <Sparkles className="h-5 w-5" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-slate-900">Importa.AI</p>
+          <p className="text-sm font-semibold text-slate-900">Escopo</p>
           <p className="text-[11px] text-slate-400">Operação inteligente</p>
         </div>
       </div>

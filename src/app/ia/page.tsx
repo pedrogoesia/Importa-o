@@ -34,7 +34,7 @@ export default function CentralIaPage() {
     {
       id: "intro",
       role: "ai",
-      text: "Olá, Marina! Sou o copiloto operacional da Importa.AI. Posso analisar processos, finanças, documentos, cargas e compliance. Pergunte algo ou escolha uma das sugestões abaixo.",
+      text: "Olá, Marina! Sou o copiloto operacional do Escopo. Posso analisar processos, finanças, documentos, cargas e compliance. Pergunte algo ou escolha uma das sugestões abaixo.",
     },
   ]);
   const [input, setInput] = useState("");
