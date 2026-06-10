@@ -77,6 +77,8 @@ export type EtapaProcesso =
   | "Liberação"
   | "Entrega";
 
+export type CanalDespacho = "verde" | "amarelo" | "vermelho" | "cinza";
+
 export interface Processo {
   id: ID;
   numeroInterno: string;
@@ -101,6 +103,22 @@ export interface Processo {
   observacoes: string;
   documentosPendentes: string[];
   temPendencia: boolean;
+  // Dados operacionais do despacho aduaneiro
+  refCliente?: string;
+  numeroInvoice?: string;
+  mercadoria?: string;
+  qtdVolumes?: number;
+  qtdContainers?: number;
+  numeroDi?: string;
+  protocoloDi?: string;
+  dataRegistro?: string;
+  canal?: CanalDespacho;
+  fiscal?: string;
+  dataDesembaraco?: string;
+  impostoFederal?: number;
+  icms?: number;
+  valorAfrmm?: number;
+  posicaoAtual?: string;
 }
 
 export type DocumentoStatus =

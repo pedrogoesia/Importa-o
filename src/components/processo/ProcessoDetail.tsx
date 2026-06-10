@@ -34,14 +34,35 @@ import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Processo, TimelineEvent, Boleto } from "@/types";
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</p>
+      <div className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</div>
     </div>
   );
 }
+
+const canalConfig: Record<string, { label: string; cls: string }> = {
+  verde: { label: "Verde", cls: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  amarelo: { label: "Amarelo", cls: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+  vermelho: { label: "Vermelho", cls: "bg-rose-50 text-rose-700 ring-rose-600/20" },
+  cinza: { label: "Cinza", cls: "bg-slate-100 text-slate-600 ring-slate-500/20" },
+};
+
+function CanalBadge({ canal }: { canal?: string }) {
+  if (!canal) return <span className="text-slate-400">—</span>;
+  const c = canalConfig[canal] ?? canalConfig.cinza;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${c.cls}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" /> {c.label}
+    </span>
+  );
+}
+
+const moeda = (v?: number) => (v != null ? formatCurrency(v) : "—");
+const dataOpt = (s?: string) => (s ? formatDate(s) : "—");
+const numOpt = (v?: number) => (v != null ? String(v) : "—");
 
 function buildTimeline(p: Processo): TimelineEvent[] {
   return [
@@ -101,29 +122,49 @@ export function ProcessoDetail({ id }: { id: string }) {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <Card>
-          <CardHeader title="Dados do processo" icon={Ship} />
+          <CardHeader title="Operações" subtitle="Dados do despacho aduaneiro" icon={Ship} />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
+            <Field label="Nº Processo" value={p.numeroInterno} />
+            <Field label="Ref. Cliente" value={p.refCliente} />
+            <Field label="Nº Conhecimento" value={p.bl} />
+            <Field label="Nº Invoice" value={p.numeroInvoice} />
+            <Field label="Exportador" value={p.fornecedor} />
+            <Field label="Mercadoria" value={p.mercadoria} />
+            <Field label="Qtd. Volumes" value={numOpt(p.qtdVolumes)} />
+            <Field label="Qtd. Cntr's" value={numOpt(p.qtdContainers)} />
+            <Field label="Navio" value={p.navio} />
+            <Field label="Dt. Chegada" value={dataOpt(p.dataChegada)} />
+            <Field label="Nº DI" value={p.numeroDi} />
+            <Field label="Protocolo DI" value={p.protocoloDi} />
+            <Field label="Dt. Registro" value={dataOpt(p.dataRegistro)} />
+            <Field label="Canal" value={<CanalBadge canal={p.canal} />} />
+            <Field label="Fiscal" value={p.fiscal} />
+            <Field label="Dt. Desembaraço" value={dataOpt(p.dataDesembaraco)} />
+            <Field label="Imposto Federal" value={moeda(p.impostoFederal)} />
+            <Field label="ICMS" value={moeda(p.icms)} />
+            <Field label="Vlr. AFRMM" value={moeda(p.valorAfrmm)} />
+          </div>
+          <div className="border-t border-slate-100 px-5 py-4">
+            <p className="text-xs text-slate-400">Posição Atual</p>
+            <p className="mt-0.5 text-sm font-medium text-slate-800">{p.posicaoAtual || p.observacoes || "—"}</p>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Comercial & logística" icon={Building2} />
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
             <Field label="Empresa" value={p.empresaNome} />
             <Field label="CNPJ" value={p.cnpj} />
             <Field label="Cliente" value={p.cliente} />
             <Field label="Responsável interno" value={p.responsavelInterno} />
             <Field label="Despachante" value={p.despachante} />
-            <Field label="Fornecedor" value={p.fornecedor} />
+            <Field label="Container" value={p.container} />
             <Field label="País de origem" value={p.paisOrigem} />
             <Field label="Porto de origem" value={p.portoOrigem} />
             <Field label="Porto de destino" value={p.portoDestino} />
-            <Field label="Navio / transportadora" value={p.navio} />
-            <Field label="BL / Conhecimento" value={p.bl} />
-            <Field label="Container" value={p.container} />
-            <Field label="Embarque (ETD)" value={formatDate(p.dataEmbarque)} />
-            <Field label="Chegada (ETA)" value={formatDate(p.dataChegada)} />
+            <Field label="Embarque (ETD)" value={dataOpt(p.dataEmbarque)} />
             <Field label="Valor FOB" value={formatCurrency(p.valorFob)} />
           </div>
-          {p.observacoes && (
-            <div className="border-t border-slate-100 px-5 py-4 text-sm text-slate-600">
-              {p.observacoes}
-            </div>
-          )}
         </Card>
       </div>
       <div className="space-y-6">
