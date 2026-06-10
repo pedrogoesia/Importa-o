@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -18,18 +19,21 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
+  Pencil,
 } from "lucide-react";
-import { getProcessoById } from "@/data/processos";
+import { useProcessos } from "@/lib/processos-store";
 import { getDocumentosByProcesso } from "@/data/documentos";
 import { boletos, transacoes, contasPagar } from "@/data/financeiro";
 import { notasFiscais } from "@/data/fiscal";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CanalBadge } from "@/components/ui/CanalBadge";
 import { DocumentCard } from "@/components/ui/DocumentCard";
 import { Timeline } from "@/components/ui/Timeline";
 import { AICard } from "@/components/ui/AICard";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { ProcessoForm } from "@/components/processo/ProcessoForm";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Processo, TimelineEvent, Boleto } from "@/types";
@@ -40,23 +44,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
       <p className="text-xs text-slate-400">{label}</p>
       <div className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</div>
     </div>
-  );
-}
-
-const canalConfig: Record<string, { label: string; cls: string }> = {
-  verde: { label: "Verde", cls: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
-  amarelo: { label: "Amarelo", cls: "bg-amber-50 text-amber-700 ring-amber-600/20" },
-  vermelho: { label: "Vermelho", cls: "bg-rose-50 text-rose-700 ring-rose-600/20" },
-  cinza: { label: "Cinza", cls: "bg-slate-100 text-slate-600 ring-slate-500/20" },
-};
-
-function CanalBadge({ canal }: { canal?: string }) {
-  if (!canal) return <span className="text-slate-400">—</span>;
-  const c = canalConfig[canal] ?? canalConfig.cinza;
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${c.cls}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current" /> {c.label}
-    </span>
   );
 }
 
@@ -106,8 +93,19 @@ const boletoCols: Column<Boleto>[] = [
 
 export function ProcessoDetail({ id }: { id: string }) {
   const toast = useToast();
-  const p = getProcessoById(id);
-  if (!p) return null;
+  const { getById, updateProcesso } = useProcessos();
+  const [editOpen, setEditOpen] = useState(false);
+  const p = getById(id);
+  if (!p) {
+    return (
+      <div className="space-y-4">
+        <Link href="/processos" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800">
+          <ArrowLeft className="h-4 w-4" /> Processos
+        </Link>
+        <p className="text-sm text-slate-400">Processo não encontrado.</p>
+      </div>
+    );
+  }
 
   const docs = getDocumentosByProcesso(p.id);
   const procBoletos = boletos.filter((b) => b.processoId === p.id);
@@ -137,7 +135,7 @@ export function ProcessoDetail({ id }: { id: string }) {
             <Field label="Nº DI" value={p.numeroDi} />
             <Field label="Protocolo DI" value={p.protocoloDi} />
             <Field label="Dt. Registro" value={dataOpt(p.dataRegistro)} />
-            <Field label="Canal" value={<CanalBadge canal={p.canal} />} />
+            <Field label="Canal" value={<CanalBadge canal={p.canal} showPrefix={false} />} />
             <Field label="Fiscal" value={p.fiscal} />
             <Field label="Dt. Desembaraço" value={dataOpt(p.dataDesembaraco)} />
             <Field label="Imposto Federal" value={moeda(p.impostoFederal)} />
@@ -437,9 +435,18 @@ export function ProcessoDetail({ id }: { id: string }) {
             <span>{p.container}</span>
           </div>
         </div>
-        <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-          Etapa: {p.etapa}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {p.canal && <CanalBadge canal={p.canal} />}
+          <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
+            Etapa: {p.etapa}
+          </span>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+        </div>
       </div>
 
       <Tabs
@@ -452,6 +459,16 @@ export function ProcessoDetail({ id }: { id: string }) {
           { key: "hist", label: "Histórico", icon: History, content: historicoTab },
           { key: "ia", label: "IA", icon: Sparkles, content: iaTab },
         ]}
+      />
+
+      <ProcessoForm
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        initial={p}
+        onSubmit={(np) => {
+          updateProcesso(np);
+          toast({ title: "Processo atualizado", description: `${np.numeroInterno} salvo.` });
+        }}
       />
     </div>
   );

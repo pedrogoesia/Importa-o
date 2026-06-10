@@ -1,5 +1,4 @@
-import { notFound } from "next/navigation";
-import { getProcessoById, processos } from "@/data/processos";
+import { processos } from "@/data/processos";
 import { ProcessoDetail } from "@/components/processo/ProcessoDetail";
 
 export function generateStaticParams() {
@@ -11,6 +10,5 @@ export default function ProcessoDetailPage({
 }: {
   params: { id: string };
 }) {
-  if (!getProcessoById(params.id)) notFound();
   return <ProcessoDetail id={params.id} />;
 }
