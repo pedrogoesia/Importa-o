@@ -70,6 +70,13 @@ function toForm(p?: Processo) {
     posicaoAtual: p?.posicaoAtual ?? "",
     observacoes: p?.observacoes ?? "",
     documentosPendentes: (p?.documentosPendentes ?? []).join(", "),
+    ceMercante: p?.ceMercante ?? "",
+    numeroManifesto: p?.numeroManifesto ?? "",
+    numeroEscala: p?.numeroEscala ?? "",
+    situacaoCarga: p?.situacaoCarga ?? "",
+    numeroDuimp: p?.numeroDuimp ?? "",
+    tipoDeclaracao: p?.tipoDeclaracao ?? "",
+    cargaBloqueada: p?.cargaBloqueada ?? false,
   };
 }
 
@@ -91,7 +98,9 @@ export function ProcessoForm({
     if (open) setF(toForm(initial));
   }, [open, initial]);
 
-  const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
+  type FormState = ReturnType<typeof toForm>;
+  const set = (k: Exclude<keyof FormState, "cargaBloqueada">, v: string) =>
+    setF((s) => ({ ...s, [k]: v } as FormState));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +148,13 @@ export function ProcessoForm({
       icms: numOpt(f.icms),
       valorAfrmm: numOpt(f.valorAfrmm),
       posicaoAtual: f.posicaoAtual || undefined,
+      ceMercante: f.ceMercante || undefined,
+      numeroManifesto: f.numeroManifesto || undefined,
+      numeroEscala: f.numeroEscala || undefined,
+      situacaoCarga: f.situacaoCarga || undefined,
+      numeroDuimp: f.numeroDuimp || undefined,
+      tipoDeclaracao: (f.tipoDeclaracao || undefined) as Processo["tipoDeclaracao"],
+      cargaBloqueada: f.cargaBloqueada || undefined,
     };
     onSubmit(p);
     onClose();
@@ -280,6 +296,46 @@ export function ProcessoForm({
               <Input inputMode="decimal" value={f.valorAfrmm} onChange={(e) => set("valorAfrmm", e.target.value)} placeholder="14900" />
             </Field>
           </div>
+        </section>
+
+        {/* Carga / CE-Mercante / Siscomex */}
+        <section className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Carga · CE-Mercante · Siscomex</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="CE-Mercante">
+              <Input value={f.ceMercante} onChange={(e) => set("ceMercante", e.target.value)} placeholder="152605000123456" />
+            </Field>
+            <Field label="Nº Manifesto">
+              <Input value={f.numeroManifesto} onChange={(e) => set("numeroManifesto", e.target.value)} placeholder="1526500011627" />
+            </Field>
+            <Field label="Nº Escala">
+              <Input value={f.numeroEscala} onChange={(e) => set("numeroEscala", e.target.value)} placeholder="26500000789" />
+            </Field>
+            <Field label="Situação da carga">
+              <Input value={f.situacaoCarga} onChange={(e) => set("situacaoCarga", e.target.value)} placeholder="Manifestada / Atracada…" />
+            </Field>
+            <Field label="Tipo de declaração">
+              <Select value={f.tipoDeclaracao} onChange={(e) => set("tipoDeclaracao", e.target.value)}>
+                <option value="">Sem declaração</option>
+                <option value="DI">DI</option>
+                <option value="DUIMP">DUIMP</option>
+                <option value="DTA">DTA</option>
+                <option value="DSI">DSI</option>
+              </Select>
+            </Field>
+            <Field label="Nº DUIMP">
+              <Input value={f.numeroDuimp} onChange={(e) => set("numeroDuimp", e.target.value)} placeholder="26BR00000000001" />
+            </Field>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-rose-200 bg-rose-50/60 px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={f.cargaBloqueada}
+              onChange={(e) => setF((s) => ({ ...s, cargaBloqueada: e.target.checked }))}
+              className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+            />
+            <span className="text-sm font-medium text-rose-700">Carga bloqueada (cadeado vermelho)</span>
+          </label>
         </section>
 
         {/* Status & situação */}

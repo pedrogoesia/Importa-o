@@ -119,6 +119,14 @@ export interface Processo {
   icms?: number;
   valorAfrmm?: number;
   posicaoAtual?: string;
+  // Consolidação Siscomex (Carga / CE-Mercante / DUIMP)
+  ceMercante?: string;
+  numeroManifesto?: string;
+  numeroEscala?: string;
+  situacaoCarga?: string;
+  cargaBloqueada?: boolean;
+  tipoDeclaracao?: "DI" | "DUIMP" | "DTA" | "DSI";
+  numeroDuimp?: string;
 }
 
 export type DocumentoStatus =

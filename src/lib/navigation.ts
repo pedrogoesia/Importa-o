@@ -12,6 +12,7 @@ import {
   BarChart3,
   Sparkles,
   Settings,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,5 +36,6 @@ export const navItems: NavItem[] = [
   { label: "Certificados", href: "/certificados", icon: ShieldCheck, group: "Compliance" },
   { label: "Relatórios", href: "/relatorios", icon: BarChart3, group: "Inteligência" },
   { label: "Central de IA", href: "/ia", icon: Sparkles, group: "Inteligência" },
+  { label: "Integrações", href: "/integracoes", icon: Database, group: "Sistema" },
   { label: "Configurações", href: "/configuracoes", icon: Settings, group: "Sistema" },
 ];

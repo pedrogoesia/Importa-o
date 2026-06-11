@@ -20,8 +20,12 @@ import {
   MessageSquare,
   Send,
   Pencil,
+  Database,
+  Lock,
 } from "lucide-react";
 import { useProcessos } from "@/lib/processos-store";
+import { fontesDados } from "@/data/integracao";
+import { FonteDadoModal } from "@/components/processo/FonteDadoModal";
 import { getDocumentosByProcesso } from "@/data/documentos";
 import { boletos, transacoes, contasPagar } from "@/data/financeiro";
 import { notasFiscais } from "@/data/fiscal";
@@ -38,10 +42,29 @@ import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Processo, TimelineEvent, Boleto } from "@/types";
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
+function Field({
+  label,
+  value,
+  onInfo,
+}: {
+  label: string;
+  value: React.ReactNode;
+  onInfo?: () => void;
+}) {
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
+      <div className="flex items-center gap-1">
+        <p className="text-xs text-slate-400">{label}</p>
+        {onInfo && (
+          <button
+            onClick={onInfo}
+            title="Onde buscar este dado (API / endpoint / campo)"
+            className="text-slate-300 transition hover:text-brand-600"
+          >
+            <Database className="h-3 w-3" />
+          </button>
+        )}
+      </div>
       <div className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</div>
     </div>
   );
@@ -95,6 +118,8 @@ export function ProcessoDetail({ id }: { id: string }) {
   const toast = useToast();
   const { getById, updateProcesso } = useProcessos();
   const [editOpen, setEditOpen] = useState(false);
+  const [fonteKey, setFonteKey] = useState<string | null>(null);
+  const info = (k: string) => () => setFonteKey(k);
   const p = getById(id);
   if (!p) {
     return (
@@ -119,32 +144,94 @@ export function ProcessoDetail({ id }: { id: string }) {
   const visaoGeral = (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
+        {p.cargaBloqueada && (
+          <button
+            onClick={info("bloqueio")}
+            className="flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-left transition hover:bg-rose-100"
+          >
+            <Lock className="h-5 w-5 shrink-0 text-rose-600" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-rose-700">Carga bloqueada — cadeado vermelho</p>
+              <p className="text-xs text-rose-600">
+                Bloqueio ativo no CE-Mercante. Verificar impedimento de entrega ou vinculação de despacho.
+              </p>
+            </div>
+            <Database className="h-4 w-4 shrink-0 text-rose-400" />
+          </button>
+        )}
+
         <Card>
-          <CardHeader title="Operações" subtitle="Dados do despacho aduaneiro" icon={Ship} />
+          <CardHeader
+            title="Operações"
+            subtitle="Dados do despacho · clique no ícone ⛁ para ver de onde vem cada dado (API)"
+            icon={Ship}
+          />
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
-            <Field label="Nº Processo" value={p.numeroInterno} />
-            <Field label="Ref. Cliente" value={p.refCliente} />
-            <Field label="Nº Conhecimento" value={p.bl} />
-            <Field label="Nº Invoice" value={p.numeroInvoice} />
-            <Field label="Exportador" value={p.fornecedor} />
-            <Field label="Mercadoria" value={p.mercadoria} />
-            <Field label="Qtd. Volumes" value={numOpt(p.qtdVolumes)} />
-            <Field label="Qtd. Cntr's" value={numOpt(p.qtdContainers)} />
-            <Field label="Navio" value={p.navio} />
-            <Field label="Dt. Chegada" value={dataOpt(p.dataChegada)} />
-            <Field label="Nº DI" value={p.numeroDi} />
-            <Field label="Protocolo DI" value={p.protocoloDi} />
-            <Field label="Dt. Registro" value={dataOpt(p.dataRegistro)} />
-            <Field label="Canal" value={<CanalBadge canal={p.canal} showPrefix={false} />} />
-            <Field label="Fiscal" value={p.fiscal} />
-            <Field label="Dt. Desembaraço" value={dataOpt(p.dataDesembaraco)} />
-            <Field label="Imposto Federal" value={moeda(p.impostoFederal)} />
-            <Field label="ICMS" value={moeda(p.icms)} />
-            <Field label="Vlr. AFRMM" value={moeda(p.valorAfrmm)} />
+            <Field label="Nº Processo" value={p.numeroInterno} onInfo={info("numeroProcesso")} />
+            <Field label="Ref. Cliente" value={p.refCliente} onInfo={info("refCliente")} />
+            <Field label="Nº Conhecimento" value={p.bl} onInfo={info("bl")} />
+            <Field label="Nº Invoice" value={p.numeroInvoice} onInfo={info("numeroInvoice")} />
+            <Field label="Exportador" value={p.fornecedor} onInfo={info("exportador")} />
+            <Field label="Mercadoria" value={p.mercadoria} onInfo={info("mercadoria")} />
+            <Field label="Qtd. Volumes" value={numOpt(p.qtdVolumes)} onInfo={info("qtdVolumes")} />
+            <Field label="Qtd. Cntr's" value={numOpt(p.qtdContainers)} onInfo={info("containers")} />
+            <Field label="Navio" value={p.navio} onInfo={info("navio")} />
+            <Field label="Dt. Chegada" value={dataOpt(p.dataChegada)} onInfo={info("dataChegada")} />
+            <Field label="Nº DI" value={p.numeroDi} onInfo={info("numeroDi")} />
+            <Field label="Protocolo DI" value={p.protocoloDi} onInfo={info("protocoloDi")} />
+            <Field label="Dt. Registro" value={dataOpt(p.dataRegistro)} onInfo={info("dataRegistro")} />
+            <Field label="Canal" value={<CanalBadge canal={p.canal} showPrefix={false} />} onInfo={info("canal")} />
+            <Field label="Fiscal" value={p.fiscal} onInfo={info("fiscal")} />
+            <Field label="Dt. Desembaraço" value={dataOpt(p.dataDesembaraco)} onInfo={info("dataDesembaraco")} />
+            <Field label="Imposto Federal" value={moeda(p.impostoFederal)} onInfo={info("impostoFederal")} />
+            <Field label="ICMS" value={moeda(p.icms)} onInfo={info("icms")} />
+            <Field label="Vlr. AFRMM" value={moeda(p.valorAfrmm)} onInfo={info("valorAfrmm")} />
           </div>
           <div className="border-t border-slate-100 px-5 py-4">
-            <p className="text-xs text-slate-400">Posição Atual</p>
-            <p className="mt-0.5 text-sm font-medium text-slate-800">{p.posicaoAtual || p.observacoes || "—"}</p>
+            <Field
+              label="Posição Atual (resumo automático)"
+              value={p.posicaoAtual || p.observacoes || "—"}
+              onInfo={info("posicaoAtual")}
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Carga · CE-Mercante · Siscomex"
+            subtitle="Consolidação oficial (Serpro Carga + Portal Único)"
+            icon={Container}
+          />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
+            <Field label="CNPJ do importador" value={p.cnpj} onInfo={info("cnpjImportador")} />
+            <Field label="CE-Mercante" value={p.ceMercante} onInfo={info("ceMercante")} />
+            <Field label="Manifesto" value={p.numeroManifesto} onInfo={info("manifesto")} />
+            <Field label="Escala" value={p.numeroEscala} onInfo={info("escala")} />
+            <Field label="Situação da carga" value={p.situacaoCarga} onInfo={info("situacaoCarga")} />
+            <Field
+              label="Bloqueio"
+              value={
+                p.cargaBloqueada ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20">
+                    <Lock className="h-3 w-3" /> Cadeado vermelho
+                  </span>
+                ) : (
+                  <span className="text-emerald-600">Sem bloqueio</span>
+                )
+              }
+              onInfo={info("bloqueio")}
+            />
+            <Field
+              label="Documento de despacho"
+              value={
+                p.tipoDeclaracao
+                  ? `${p.tipoDeclaracao} ${p.tipoDeclaracao === "DUIMP" ? p.numeroDuimp ?? "" : p.numeroDi ?? ""}`.trim()
+                  : "—"
+              }
+              onInfo={info("documentoDespacho")}
+            />
+            <Field label="Nº DUIMP" value={p.numeroDuimp} onInfo={info("numeroDuimp")} />
+            <Field label="Container" value={p.container} onInfo={info("containers")} />
           </div>
         </Card>
 
@@ -469,6 +556,11 @@ export function ProcessoDetail({ id }: { id: string }) {
           updateProcesso(np);
           toast({ title: "Processo atualizado", description: `${np.numeroInterno} salvo.` });
         }}
+      />
+
+      <FonteDadoModal
+        fonte={fonteKey ? fontesDados[fonteKey] ?? null : null}
+        onClose={() => setFonteKey(null)}
       />
     </div>
   );
