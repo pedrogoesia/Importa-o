@@ -152,6 +152,14 @@ export interface Documento {
   aiInconsistencias: string[];
 }
 
+/** Diferença detectada entre o snapshot de ontem e o de hoje. */
+export interface CargaMudanca {
+  campo: string;
+  de: string;
+  para: string;
+  critico?: boolean;
+}
+
 export interface CargaSnapshot {
   id: ID;
   data: string;
@@ -163,6 +171,7 @@ export interface CargaSnapshot {
   statusAtual: string;
   mudou: boolean;
   detalhe: string;
+  mudancas?: CargaMudanca[];
 }
 
 export type BoletoStatus =
