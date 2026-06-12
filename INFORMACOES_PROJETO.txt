@@ -1,0 +1,379 @@
+================================================================================
+ESCOPO — SISTEMA OPERACIONAL DE IA PARA IMPORTADORAS
+DICIONÁRIO DE INFORMAÇÕES (DADOS) POR SEÇÃO
+================================================================================
+Lista de TODAS as informações/campos que cada seção do sistema guarda.
+(Sem detalhes de tela/UX e sem mapeamento de APIs.)
+
+Lógica central:
+Empresa (CNPJ)  →  Processo de importação  →  Documentos  →  Atualizações de
+carga  →  Financeiro  →  Fiscal  →  Compliance (Radar/Certificados)  →
+Relatórios e alertas.
+Regra de negócio: cada cliente tem sua própria empresa/CNPJ.
+
+
+================================================================================
+1. EMPRESAS
+================================================================================
+Cada empresa (importadora/CNPJ) guarda:
+
+- ID interno
+- Razão social
+- Nome fantasia
+- CNPJ
+- Tipo: Matriz ou Filial
+- UF
+- Endereço
+- CEP
+- Município
+- Inscrição Estadual
+- Inscrição Municipal
+- Sócios (lista) — cada sócio com:
+    • Nome
+    • CPF
+    • Participação (%)
+- ADM responsável
+- E-mail financeiro
+- E-mail operacional
+- Telefone / WhatsApp
+- Contabilidade
+- Regime tributário: Simples Nacional | Lucro Presumido | Lucro Real
+- Benefício fiscal
+- Cliente vinculado
+- Status da empresa: Ativa | Pendente | Inativa
+- Certificado digital vinculado
+- Data de abertura
+- Observações
+- Integrações (por CNPJ):
+    • Open Finance — status: Conectado | Pendente | Não configurado
+    • Banco (Open Finance)
+    • Emissão de boleto — status: Conectado | Pendente | Não configurado
+    • Convênio bancário (boleto)
+    • Emissão de NF-e — status: Conectado | Pendente | Não configurado
+
+Informações derivadas exibidas na empresa:
+- Quantidade de processos vinculados
+- Documentos fixos da empresa
+- Pendências (documentos pendentes vindos dos processos)
+
+
+================================================================================
+2. PROCESSOS DE IMPORTAÇÃO
+================================================================================
+Cada processo (uma carga/operação, identificada pelo BL) guarda:
+
+IDENTIFICAÇÃO
+- ID interno
+- Nº do processo (número interno, ex.: IMP-001)
+- Ref. Cliente (referência interna do cliente)
+- Empresa (ID + nome)
+- CNPJ da empresa
+- Cliente
+- Responsável interno
+- Despachante
+
+COMERCIAL & LOGÍSTICA
+- Exportador / Fornecedor internacional
+- Mercadoria (descrição)
+- Nº Invoice
+- Nº Conhecimento de embarque (BL)
+- Qtd. de Volumes
+- Qtd. de Contêineres
+- Container (identificação)
+- Navio / transportadora
+- País de origem
+- Porto de origem
+- Porto de destino
+- Data de embarque (ETD)
+- Data de chegada (ETA)
+- Valor FOB
+
+DESPACHO ADUANEIRO
+- Nº DI
+- Protocolo DI
+- Data de registro
+- Canal: Verde | Amarelo | Vermelho | Cinza
+- Fiscal / status fiscal-aduaneiro
+- Data de desembaraço
+- Imposto Federal (valor)
+- ICMS (valor)
+- Valor AFRMM
+
+CARGA / CE-MERCANTE / SISCOMEX
+- CE-Mercante
+- Nº Manifesto
+- Nº Escala
+- Situação da carga
+- Carga bloqueada (sim/não) — cadeado vermelho
+- Tipo de declaração: DI | DUIMP | DTA | DSI
+- Nº DUIMP
+
+STATUS & SITUAÇÃO
+- Status da carga: Em andamento | Aguardando documento | Em trânsito |
+  Atracado | Desembaraçado | Concluído | Atrasado
+- Etapa atual: Pré-embarque | Embarque | Trânsito | Chegada | Desembaraço |
+  Liberação | Entrega
+- Posição atual (resumo automático do processo)
+- Documentos pendentes (lista)
+- Tem pendência (sim/não)
+- Observações
+
+
+================================================================================
+3. DOCUMENTOS
+================================================================================
+Cada documento guarda:
+
+- ID interno
+- Nome do arquivo
+- Tipo do documento
+- Empresa (ID + nome) — opcional
+- Processo (ID + número) — opcional
+- Status: Validado | Em análise | Inconsistência | Pendente
+- Tamanho
+- Data de envio
+- Análise da IA:
+    • Resumo do documento
+    • Campos extraídos (lista de label + valor — ex.: CNPJ, valores, datas)
+    • Inconsistências apontadas (lista)
+
+
+================================================================================
+4. ATUALIZAÇÕES DE CARGA (SNAPSHOTS)
+================================================================================
+Cada snapshot diário de uma carga guarda:
+
+- ID interno
+- Data do snapshot
+- Processo (ID + número)
+- Empresa
+- BL
+- Status anterior (ontem)
+- Status atual (hoje)
+- Mudou (sim/não)
+- Detalhe (texto da atualização)
+- Mudanças (lista do diff campo a campo) — cada mudança com:
+    • Campo que mudou
+    • Valor de ontem (de)
+    • Valor de hoje (para)
+    • Crítico (sim/não) — ex.: bloqueio, canal
+
+
+================================================================================
+5. FINANCEIRO
+================================================================================
+
+5.1 TRANSAÇÃO (movimentação / conciliação)
+- ID interno
+- Data
+- Descrição
+- Categoria
+- Empresa
+- Processo (número) — opcional
+- Tipo: Entrada | Saída
+- Valor
+- Conciliada (sim/não)
+
+5.2 CONTA A PAGAR
+- ID interno
+- Descrição
+- Fornecedor
+- Empresa
+- Processo (número) — opcional
+- Categoria — opcional
+- Valor
+- Vencimento
+- Status: Em aberto | Paga | Vencida | Agendada
+- Recorrente / custo fixo mensal (sim/não)
+
+5.3 CUSTO DO PROCESSO (base do DRE e do repasse)
+- ID interno
+- Processo (número)
+- Empresa
+- Categoria: Frete internacional | II/IPI | ICMS | AFRMM | Despachante |
+  Armazenagem | Demurrage | Seguro | Taxas Siscomex | Frete rodoviário | Outras
+- Descrição
+- Valor
+- Repassável ao cliente (sim/não)
+- Status: Previsto | Realizado
+- Data
+
+5.4 RENTABILIDADE POR PROCESSO (cabeçalho do DRE)
+- Processo (número)
+- Empresa
+- Cliente
+- Receita faturada ao cliente
+(derivados: custo total, custo repassável, custo absorvido, resultado, margem %)
+
+5.5 FECHAMENTO MENSAL (agregados)
+- Período
+- Total recebido no mês
+- Total pago no mês
+- Contas em aberto
+- Boletos vencidos
+- Boletos pagos
+- Margem média
+- Inconsistências (lista)
+
+5.6 INDICADORES (calculados, escopo por empresa)
+- Saldo do mês (entradas − saídas)
+- A receber em aberto
+- A pagar em aberto
+- Em atraso (a pagar + a receber)
+- Agenda financeira (próximos vencimentos e recebimentos)
+- Fluxo de caixa projetado (saldo inicial + entradas/saídas por semana)
+
+
+================================================================================
+6. BOLETOS & COBRANÇAS
+================================================================================
+Cada boleto guarda:
+
+- ID interno
+- Número (linha digitável)
+- Empresa (ID + nome)
+- Processo (ID + número) — opcional
+- Cliente
+- Valor
+- Data de emissão
+- Vencimento
+- Status: Criado | Enviado | Aguardando pagamento | Vencendo | Vencido |
+  Pago | Cancelado | Renegociado
+- Descrição
+- Parcelamento / cobrança (quando dividido em vários boletos):
+    • Nº da parcela
+    • Total de parcelas
+    • ID do grupo da cobrança
+- Data de pagamento (quando pago)
+
+Indicadores de boletos:
+- Total emitido
+- Recebido (valor + taxa de recebimento %)
+- A receber em aberto
+- Inadimplência (vencidos)
+- Em aberto por cliente
+
+
+================================================================================
+7. FISCAL (NOTAS FISCAIS)
+================================================================================
+Cada nota fiscal guarda:
+
+- ID interno
+- Número
+- Tipo: Entrada | Saída
+- Empresa
+- Processo (número) — opcional
+- Valor
+- Data de emissão
+- Status: Aguardando emissão | Emitida | Com erro | Cancelada
+- Observação
+
+
+================================================================================
+8. RADAR & OBRIGAÇÕES
+================================================================================
+
+8.1 HABILITAÇÃO RADAR (por empresa)
+- ID interno
+- Empresa
+- ADM responsável
+- Último registro
+- Data limite de registro
+- Observações
+- Modalidade: Expressa | Limitada | Ilimitada
+- Limite de operação (valor por semestre)
+- Situação: Habilitado | Em habilitação | Em revisão | Suspenso
+- Etapas da habilitação (checklist) — cada etapa com:
+    • Título
+    • Feito (sim/não)
+- Documentos do dossiê — cada documento com:
+    • Nome
+    • Status: Pendente | Recebido | Enviado
+
+8.2 OBRIGAÇÕES IRPF (por empresa)
+- ID interno
+- Empresa
+- CNPJ
+- UF
+- Sócios
+- Data de abertura
+- Contador responsável (IRPF)
+- Status: Em dia | Em elaboração | Pendente
+
+
+================================================================================
+9. CERTIFICADOS DIGITAIS
+================================================================================
+Cada certificado guarda:
+
+- ID interno
+- Empresa
+- Responsável
+- Tipo: e-CNPJ | e-CPF
+- Validade
+- Status: Válido | Vencendo | Vencido
+- Sócio / Despachante vinculado
+- Emissor (Autoridade Certificadora)
+- Senha
+- Documento guardado (arquivo .pfx/.p12)
+- Data de emissão
+(derivado: dias até vencer)
+
+
+================================================================================
+10. RELATÓRIOS & ALERTAS
+================================================================================
+
+10.1 RELATÓRIO
+- ID interno
+- Título
+- Descrição
+- Categoria
+- Gerado em (data)
+- Período
+
+10.2 ALERTA
+- ID interno
+- Tipo
+- Empresa
+- Processo (número) — opcional
+- Prioridade: Crítico | Atenção | Informativo | Resolvido
+- Descrição
+- Recomendação da IA
+- Status: Aberto | Em andamento | Resolvido
+- Data
+
+
+================================================================================
+11. DASHBOARD (INDICADORES GERAIS)
+================================================================================
+- Total de empresas cadastradas
+- Processos ativos
+- Processos aguardando documento
+- Processos com atualização de carga
+- Boletos vencidos
+- Boletos a vencer
+- Certificados vencendo
+- Contas a pagar no mês
+- Total recebido no mês
+- Total pago no mês
+- Alertas críticos
+- Últimas atualizações de carga
+- Resumo gerado por IA (inteligência operacional)
+
+
+================================================================================
+12. EVENTOS DE HISTÓRICO (TIMELINE)
+================================================================================
+Cada evento da linha do tempo guarda:
+- ID interno
+- Data
+- Título
+- Descrição
+- Tipo: Info | Sucesso | Alerta | IA
+
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================
