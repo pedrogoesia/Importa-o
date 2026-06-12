@@ -66,3 +66,25 @@
 .animate-modal-in {
   animation: modal-in 0.2s ease-out;
 }
+
+/* Impressão / exportar PDF: mostra apenas o modelo da DUIMP */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #duimp-modelo,
+  #duimp-modelo * {
+    visibility: visible;
+  }
+  #duimp-modelo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

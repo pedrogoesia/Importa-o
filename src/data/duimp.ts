@@ -367,6 +367,13 @@ const duimpSeed: Record<string, DuimpSeed> = {
 
 const moeda = "USD";
 
+/** A partir de um BL cadastrado, o sistema já puxa o CE-Mercante (mock determinístico). */
+function deriveCe(bl?: string) {
+  if (!bl || bl === "—") return undefined;
+  const dig = bl.replace(/\D/g, "");
+  return `152${dig.padStart(12, "0").slice(-12)}`;
+}
+
 function bloco(
   letra: string,
   key: string,
@@ -400,7 +407,7 @@ export function buildDuimp(p: Processo): Duimp {
     modal,
     tipoConhecimento: "BL",
     numeroBlAwb: p.bl,
-    ceMercante: p.ceMercante,
+    ceMercante: p.ceMercante ?? deriveCe(p.bl),
     unidadeDespacho: p.portoDestino,
     origem: p.portoOrigem,
     destino: p.portoDestino,
