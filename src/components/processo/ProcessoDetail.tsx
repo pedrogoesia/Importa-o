@@ -22,10 +22,12 @@ import {
   Pencil,
   Database,
   Lock,
+  FileCheck2,
 } from "lucide-react";
 import { useProcessos } from "@/lib/processos-store";
 import { fontesDados } from "@/data/integracao";
 import { FonteDadoModal } from "@/components/processo/FonteDadoModal";
+import { DuimpTab } from "@/components/processo/DuimpTab";
 import { getDocumentosByProcesso } from "@/data/documentos";
 import { boletos, transacoes, contasPagar } from "@/data/financeiro";
 import { notasFiscais } from "@/data/fiscal";
@@ -539,6 +541,7 @@ export function ProcessoDetail({ id }: { id: string }) {
       <Tabs
         tabs={[
           { key: "geral", label: "Visão geral", icon: Eye, content: visaoGeral },
+          { key: "duimp", label: "DUIMP", icon: FileCheck2, content: <DuimpTab processoId={p.id} /> },
           { key: "docs", label: "Documentos", icon: FileText, content: documentosTab },
           { key: "carga", label: "Carga", icon: Container, content: cargaTab },
           { key: "fin", label: "Financeiro", icon: Wallet, content: financeiroTab },

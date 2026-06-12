@@ -3,11 +3,13 @@ import { Topbar } from "./Topbar";
 import { MobileNav } from "./MobileNav";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ProcessosProvider } from "@/lib/processos-store";
+import { DuimpProvider } from "@/lib/duimp-store";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
       <ProcessosProvider>
+        <DuimpProvider>
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
           <div className="flex flex-1 flex-col overflow-hidden">
@@ -20,6 +22,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
           </div>
         </div>
+        </DuimpProvider>
       </ProcessosProvider>
     </ToastProvider>
   );

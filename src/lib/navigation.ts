@@ -13,6 +13,7 @@ import {
   Sparkles,
   Settings,
   Database,
+  FileCheck2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard, group: "Operação" },
   { label: "Empresas", href: "/empresas", icon: Building2, group: "Operação" },
   { label: "Processos", href: "/processos", icon: Ship, group: "Operação" },
+  { label: "DUIMP", href: "/duimp", icon: FileCheck2, group: "Operação" },
   { label: "Documentos", href: "/documentos", icon: FileText, group: "Operação" },
   { label: "Cargas", href: "/cargas", icon: Container, group: "Operação" },
   { label: "Financeiro", href: "/financeiro", icon: Wallet, group: "Financeiro" },
