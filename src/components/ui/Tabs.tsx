@@ -16,7 +16,7 @@ export function Tabs({ tabs, initial }: { tabs: TabDef[]; initial?: string }) {
 
   return (
     <div>
-      <div className="mb-5 flex gap-1 overflow-x-auto scrollbar-thin border-b border-slate-200">
+      <div className="mb-5 inline-flex max-w-full gap-1 overflow-x-auto scrollbar-thin rounded-full border border-slate-200/70 bg-slate-100/70 p-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.key === active;
@@ -25,10 +25,10 @@ export function Tabs({ tabs, initial }: { tabs: TabDef[]; initial?: string }) {
               key={tab.key}
               onClick={() => setActive(tab.key)}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition",
+                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all",
                 isActive
-                  ? "border-brand-600 text-brand-700"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "bg-white text-brand-700 shadow-card"
+                  : "text-slate-500 hover:text-slate-800"
               )}
             >
               {Icon && <Icon className="h-4 w-4" />}

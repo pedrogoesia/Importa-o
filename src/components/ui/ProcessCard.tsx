@@ -2,13 +2,24 @@ import Link from "next/link";
 import { Ship, Container, MapPin, Calendar, AlertCircle } from "lucide-react";
 import type { Processo } from "@/types";
 import { StatusBadge } from "./StatusBadge";
-import { formatDate } from "@/lib/utils";
+import { CanalBadge } from "./CanalBadge";
+import { formatDate, cn } from "@/lib/utils";
+
+const canalBorder: Record<string, string> = {
+  verde: "border-l-emerald-400",
+  amarelo: "border-l-amber-400",
+  vermelho: "border-l-rose-400",
+  cinza: "border-l-slate-300",
+};
 
 export function ProcessCard({ processo }: { processo: Processo }) {
   return (
     <Link
       href={`/processos/${processo.id}`}
-      className="group block rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-brand-200 hover:shadow-card-hover"
+      className={cn(
+        "group block rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover",
+        processo.canal && `border-l-4 ${canalBorder[processo.canal] ?? "border-l-slate-300"}`
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -24,7 +35,10 @@ export function ProcessCard({ processo }: { processo: Processo }) {
             {processo.empresaNome} · {processo.cliente}
           </p>
         </div>
-        <StatusBadge status={processo.status} />
+        <div className="flex flex-col items-end gap-1.5">
+          <StatusBadge status={processo.status} />
+          {processo.canal && <CanalBadge canal={processo.canal} size="sm" />}
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">

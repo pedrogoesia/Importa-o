@@ -18,13 +18,13 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
-      <div className="flex h-16 items-center gap-2.5 px-6 border-b border-slate-100">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-slate-200/70 glass">
+      <div className="flex h-16 items-center gap-2.5 px-6">
+        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-card">
           <Sparkles className="h-5 w-5" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-slate-900">Importa.AI</p>
+          <p className="text-[15px] font-semibold tracking-tightest text-slate-900">Escopo</p>
           <p className="text-[11px] text-slate-400">Operação inteligente</p>
         </div>
       </div>
@@ -50,10 +50,10 @@ export function Sidebar() {
                       <Link
                         href={item.href}
                         className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
                           active
-                            ? "bg-brand-50 text-brand-700"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            ? "bg-white font-semibold text-brand-700 shadow-card ring-1 ring-slate-200/70"
+                            : "font-medium text-slate-600 hover:bg-white/70 hover:text-slate-900"
                         )}
                       >
                         <Icon

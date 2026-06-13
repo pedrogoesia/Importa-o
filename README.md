@@ -1,4 +1,4 @@
-# Importa.AI — Sistema Operacional de IA para Importadoras
+# Escopo — Sistema Operacional de IA para Importadoras
 
 Base visual e estrutural (front-end navegável) de um ERP moderno com IA para
 importadoras. Foco em arquitetura limpa e escalável, pronto para conectar a

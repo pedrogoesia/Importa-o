@@ -45,7 +45,7 @@ export function FilterBar({
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100/70"
           />
         </div>
       )}
@@ -54,7 +54,7 @@ export function FilterBar({
           key={f.key}
           value={values[f.key] ?? ""}
           onChange={(e) => onFilterChange?.(f.key, e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-600 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+          className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-600 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100/70"
         >
           <option value="">{f.label}: todos</option>
           {f.options.map((o) => (

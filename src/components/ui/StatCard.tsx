@@ -29,11 +29,11 @@ export function StatCard({
   trend?: { value: string; positive?: boolean };
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-card-hover">
+    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
       <div className="flex items-start justify-between">
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg",
+            "flex h-10 w-10 items-center justify-center rounded-2xl",
             toneClasses[tone]
           )}
         >
@@ -50,7 +50,7 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
+      <p className="mt-4 text-[28px] font-semibold leading-none tracking-tightest text-slate-900">
         {value}
       </p>
       <p className="mt-0.5 text-sm text-slate-500">{label}</p>

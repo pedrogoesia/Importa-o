@@ -13,6 +13,14 @@ export const cargaSnapshots: CargaSnapshot[] = [
     mudou: true,
     detalhe:
       "Navio Hapag Brasilia atracou no Porto de Itajaí às 04:12. Início de descarga previsto para hoje.",
+    mudancas: [
+      { campo: "Situação da carga", de: "Em trânsito", para: "Atracada / armazenada no recinto" },
+      { campo: "Dt. Atracação (escala)", de: "prevista 08/06", para: "confirmada 06/06 04:12" },
+      { campo: "Nº DI", de: "—", para: "26/0884512-7" },
+      { campo: "Dt. Registro DI", de: "—", para: "07/06/2026" },
+      { campo: "Canal", de: "—", para: "Amarelo", critico: true },
+      { campo: "Posição atual", de: "Em trânsito marítimo", para: "Atracado — DI registrada, em parametrização" },
+    ],
   },
   {
     id: "snap-002",
@@ -26,6 +34,12 @@ export const cargaSnapshots: CargaSnapshot[] = [
     mudou: true,
     detalhe:
       "Siscomex registrou exigência fiscal. Documentos complementares solicitados pela Receita.",
+    mudancas: [
+      { campo: "Situação da carga", de: "Em conferência (canal amarelo)", para: "Carga bloqueada — exigência fiscal", critico: true },
+      { campo: "Bloqueio (cadeado)", de: "Sem bloqueio", para: "Cadeado vermelho — BLOQUEIO TOTAL", critico: true },
+      { campo: "Motivo do bloqueio", de: "—", para: "Exigência fiscal: laudo técnico e certificado de origem" },
+      { campo: "Risco financeiro", de: "—", para: "Demurrage a partir de 10/06 (R$ 1.860/dia)" },
+    ],
   },
   {
     id: "snap-003",
@@ -51,6 +65,13 @@ export const cargaSnapshots: CargaSnapshot[] = [
     mudou: true,
     detalhe:
       "Declaração de importação desembaraçada (canal verde). Liberação para retirada autorizada.",
+    mudancas: [
+      { campo: "Situação da carga", de: "Em desembaraço", para: "Desembaraçada — aguardando entrega" },
+      { campo: "Canal", de: "Aguardando parametrização", para: "Verde" },
+      { campo: "Dt. Desembaraço", de: "—", para: "02/06/2026" },
+      { campo: "ICMS", de: "Declarado/Pendente", para: "Pago (R$ 12.000)" },
+      { campo: "Próximo passo", de: "Acompanhar conferência", para: "Emitir NF de entrada e liberar retirada" },
+    ],
   },
   {
     id: "snap-005",

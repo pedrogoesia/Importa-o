@@ -1,4 +1,34 @@
-import type { Certificado, IrpfRegistro, RadarRegistro } from "@/types";
+import type {
+  Certificado,
+  IrpfRegistro,
+  RadarRegistro,
+  RadarEtapa,
+  RadarDocumentoItem,
+} from "@/types";
+
+// Roteiro padrão de habilitação RADAR (Portal Único Siscomex / Receita Federal)
+export const radarEtapasTemplate = (): RadarEtapa[] => [
+  { id: "e1", titulo: "Cadastro / atualização da empresa no Siscomex", feito: false },
+  { id: "e2", titulo: "Procuração eletrônica para o despachante", feito: false },
+  { id: "e3", titulo: "Montagem do dossiê digital de habilitação", feito: false },
+  { id: "e4", titulo: "Comprovação de capacidade financeira", feito: false },
+  { id: "e5", titulo: "Documentos societários e dos sócios", feito: false },
+  { id: "e6", titulo: "Protocolo e análise pela Receita Federal", feito: false },
+  { id: "e7", titulo: "Deferimento da habilitação", feito: false },
+];
+
+export const radarDocsTemplate = (): RadarDocumentoItem[] => [
+  { id: "d1", nome: "Contrato social consolidado", status: "pendente" },
+  { id: "d2", nome: "Procuração do despachante", status: "pendente" },
+  { id: "d3", nome: "Documentos dos sócios (CPF/RG)", status: "pendente" },
+  { id: "d4", nome: "Comprovação de capacidade financeira", status: "pendente" },
+  { id: "d5", nome: "Balanço / DRE do último exercício", status: "pendente" },
+  { id: "d6", nome: "Comprovante de endereço", status: "pendente" },
+];
+
+const etapasTodas = (): RadarEtapa[] => radarEtapasTemplate().map((e) => ({ ...e, feito: true }));
+const docsTodos = (): RadarDocumentoItem[] =>
+  radarDocsTemplate().map((d) => ({ ...d, status: "enviado" as const }));
 
 export const radarRegistros: RadarRegistro[] = [
   {
@@ -8,6 +38,11 @@ export const radarRegistros: RadarRegistro[] = [
     ultimoRegistro: "2025-12-10",
     dataLimite: "2026-06-10",
     observacoes: "Radar ilimitado. Revisão semestral em dia.",
+    modalidade: "Ilimitada",
+    limite: "Sem limite de valor",
+    situacao: "habilitado",
+    etapas: etapasTodas(),
+    documentos: docsTodos(),
   },
   {
     id: "rad-002",
@@ -16,6 +51,11 @@ export const radarRegistros: RadarRegistro[] = [
     ultimoRegistro: "2025-11-20",
     dataLimite: "2026-06-20",
     observacoes: "Radar limitado USD 500k. Acompanhar volume importado.",
+    modalidade: "Limitada",
+    limite: "Até USD 500 mil / semestre",
+    situacao: "habilitado",
+    etapas: etapasTodas(),
+    documentos: docsTodos(),
   },
   {
     id: "rad-003",
@@ -24,6 +64,11 @@ export const radarRegistros: RadarRegistro[] = [
     ultimoRegistro: "2026-01-05",
     dataLimite: "2026-07-05",
     observacoes: "Sem pendências.",
+    modalidade: "Limitada",
+    limite: "Até USD 150 mil / semestre",
+    situacao: "habilitado",
+    etapas: etapasTodas(),
+    documentos: docsTodos(),
   },
   {
     id: "rad-004",
@@ -31,7 +76,19 @@ export const radarRegistros: RadarRegistro[] = [
     adm: "Paulo Henrique",
     ultimoRegistro: "2025-12-01",
     dataLimite: "2026-06-09",
-    observacoes: "Habilitação em revisão. Atualizar antes do fechamento mensal.",
+    observacoes: "Habilitação em revisão. Aguardando análise da Receita Federal.",
+    modalidade: "Expressa",
+    limite: "Até USD 50 mil / semestre",
+    situacao: "em_habilitacao",
+    etapas: radarEtapasTemplate().map((e, i) => ({ ...e, feito: i < 5 })),
+    documentos: [
+      { id: "d1", nome: "Contrato social consolidado", status: "enviado" },
+      { id: "d2", nome: "Procuração do despachante", status: "enviado" },
+      { id: "d3", nome: "Documentos dos sócios (CPF/RG)", status: "recebido" },
+      { id: "d4", nome: "Comprovação de capacidade financeira", status: "recebido" },
+      { id: "d5", nome: "Balanço / DRE do último exercício", status: "pendente" },
+      { id: "d6", nome: "Comprovante de endereço", status: "enviado" },
+    ],
   },
 ];
 
@@ -44,6 +101,10 @@ export const certificados: Certificado[] = [
     validade: "2026-06-09",
     status: "vencendo",
     socioDespachante: "Helena Duarte",
+    emissor: "Serasa Experian",
+    senha: "Nordix@2025",
+    documentoNome: "e-CNPJ_Nordix_A1.pfx",
+    emitidoEm: "2025-06-09",
   },
   {
     id: "cert-002",
@@ -53,6 +114,10 @@ export const certificados: Certificado[] = [
     validade: "2026-06-18",
     status: "vencendo",
     socioDespachante: "João Ferreira (despachante)",
+    emissor: "Certisign",
+    senha: "MeS#2025!",
+    documentoNome: "e-CNPJ_MeS_A1.pfx",
+    emitidoEm: "2025-06-18",
   },
   {
     id: "cert-003",
@@ -62,6 +127,10 @@ export const certificados: Certificado[] = [
     validade: "2026-06-20",
     status: "vencendo",
     socioDespachante: "Patrícia Gomes (despachante)",
+    emissor: "Valid",
+    senha: "IGCD2025@",
+    documentoNome: "e-CNPJ_IGCD_A1.pfx",
+    emitidoEm: "2025-06-20",
   },
   {
     id: "cert-004",
@@ -71,6 +140,10 @@ export const certificados: Certificado[] = [
     validade: "2026-07-12",
     status: "valido",
     socioDespachante: "João Ferreira (despachante)",
+    emissor: "Serasa Experian",
+    senha: "Eleven#2025",
+    documentoNome: "e-CNPJ_Eleven_A1.pfx",
+    emitidoEm: "2025-07-12",
   },
   {
     id: "cert-005",
@@ -80,6 +153,10 @@ export const certificados: Certificado[] = [
     validade: "2026-05-30",
     status: "vencido",
     socioDespachante: "Sandra Lima (sócia)",
+    emissor: "Certisign",
+    senha: "Sandra@2025",
+    documentoNome: "e-CPF_SandraLima_A1.pfx",
+    emitidoEm: "2025-05-30",
   },
 ];
 

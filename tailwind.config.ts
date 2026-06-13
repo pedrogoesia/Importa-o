@@ -9,25 +9,49 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Acento azul "Apple"
         brand: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdcff",
+          300: "#8ec5ff",
+          400: "#52a9ff",
+          500: "#0a84ff",
+          600: "#0071e3",
+          700: "#0062c4",
+          800: "#0a4ba0",
+          900: "#0c3d80",
         },
+        // Cinza de fundo "Apple" (#f5f5f7)
+        canvas: "#f5f5f7",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "SF Pro Text",
+          "SF Pro Display",
+          "var(--font-inter)",
+          "system-ui",
+          "sans-serif",
+        ],
+      },
+      letterSpacing: {
+        tightest: "-0.022em",
+      },
+      borderRadius: {
+        "2xl": "1rem",
+        "3xl": "1.25rem",
+        "4xl": "1.75rem",
       },
       boxShadow: {
-        card: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)",
-        "card-hover": "0 4px 12px -2px rgb(0 0 0 / 0.08)",
+        // Sombras difusas, baixíssima opacidade — estilo Apple
+        card: "0 1px 2px rgba(15,23,42,0.04), 0 6px 20px -6px rgba(15,23,42,0.06)",
+        "card-hover": "0 8px 30px -8px rgba(15,23,42,0.12), 0 2px 8px -2px rgba(15,23,42,0.06)",
+        glass: "0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 30px -10px rgba(15,23,42,0.10)",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
     },
   },

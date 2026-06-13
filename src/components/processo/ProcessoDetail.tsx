@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -18,29 +19,62 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
+  Pencil,
+  Database,
+  Lock,
+  FileCheck2,
 } from "lucide-react";
-import { getProcessoById } from "@/data/processos";
+import { useProcessos } from "@/lib/processos-store";
+import { fontesDados } from "@/data/integracao";
+import { FonteDadoModal } from "@/components/processo/FonteDadoModal";
+import { DuimpTab } from "@/components/processo/DuimpTab";
 import { getDocumentosByProcesso } from "@/data/documentos";
 import { boletos, transacoes, contasPagar } from "@/data/financeiro";
 import { notasFiscais } from "@/data/fiscal";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CanalBadge } from "@/components/ui/CanalBadge";
 import { DocumentCard } from "@/components/ui/DocumentCard";
 import { Timeline } from "@/components/ui/Timeline";
 import { AICard } from "@/components/ui/AICard";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { ProcessoForm } from "@/components/processo/ProcessoForm";
+import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Processo, TimelineEvent, Boleto } from "@/types";
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  onInfo,
+}: {
+  label: string;
+  value: React.ReactNode;
+  onInfo?: () => void;
+}) {
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</p>
+      <div className="flex items-center gap-1">
+        <p className="text-xs text-slate-400">{label}</p>
+        {onInfo && (
+          <button
+            onClick={onInfo}
+            title="Onde buscar este dado (API / endpoint / campo)"
+            className="text-slate-300 transition hover:text-brand-600"
+          >
+            <Database className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      <div className="mt-0.5 text-sm font-medium text-slate-800">{value || "—"}</div>
     </div>
   );
 }
+
+const moeda = (v?: number) => (v != null ? formatCurrency(v) : "—");
+const dataOpt = (s?: string) => (s ? formatDate(s) : "—");
+const numOpt = (v?: number) => (v != null ? String(v) : "—");
 
 function buildTimeline(p: Processo): TimelineEvent[] {
   return [
@@ -83,8 +117,22 @@ const boletoCols: Column<Boleto>[] = [
 ];
 
 export function ProcessoDetail({ id }: { id: string }) {
-  const p = getProcessoById(id);
-  if (!p) return null;
+  const toast = useToast();
+  const { getById, updateProcesso } = useProcessos();
+  const [editOpen, setEditOpen] = useState(false);
+  const [fonteKey, setFonteKey] = useState<string | null>(null);
+  const info = (k: string) => () => setFonteKey(k);
+  const p = getById(id);
+  if (!p) {
+    return (
+      <div className="space-y-4">
+        <Link href="/processos" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800">
+          <ArrowLeft className="h-4 w-4" /> Processos
+        </Link>
+        <p className="text-sm text-slate-400">Processo não encontrado.</p>
+      </div>
+    );
+  }
 
   const docs = getDocumentosByProcesso(p.id);
   const procBoletos = boletos.filter((b) => b.processoId === p.id);
@@ -98,30 +146,112 @@ export function ProcessoDetail({ id }: { id: string }) {
   const visaoGeral = (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
+        {p.cargaBloqueada && (
+          <button
+            onClick={info("bloqueio")}
+            className="flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-left transition hover:bg-rose-100"
+          >
+            <Lock className="h-5 w-5 shrink-0 text-rose-600" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-rose-700">Carga bloqueada — cadeado vermelho</p>
+              <p className="text-xs text-rose-600">
+                Bloqueio ativo no CE-Mercante. Verificar impedimento de entrega ou vinculação de despacho.
+              </p>
+            </div>
+            <Database className="h-4 w-4 shrink-0 text-rose-400" />
+          </button>
+        )}
+
         <Card>
-          <CardHeader title="Dados do processo" icon={Ship} />
+          <CardHeader
+            title="Operações"
+            subtitle="Dados do despacho · clique no ícone ⛁ para ver de onde vem cada dado (API)"
+            icon={Ship}
+          />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
+            <Field label="Nº Processo" value={p.numeroInterno} onInfo={info("numeroProcesso")} />
+            <Field label="Ref. Cliente" value={p.refCliente} onInfo={info("refCliente")} />
+            <Field label="Nº Conhecimento" value={p.bl} onInfo={info("bl")} />
+            <Field label="Nº Invoice" value={p.numeroInvoice} onInfo={info("numeroInvoice")} />
+            <Field label="Exportador" value={p.fornecedor} onInfo={info("exportador")} />
+            <Field label="Mercadoria" value={p.mercadoria} onInfo={info("mercadoria")} />
+            <Field label="Qtd. Volumes" value={numOpt(p.qtdVolumes)} onInfo={info("qtdVolumes")} />
+            <Field label="Qtd. Cntr's" value={numOpt(p.qtdContainers)} onInfo={info("containers")} />
+            <Field label="Navio" value={p.navio} onInfo={info("navio")} />
+            <Field label="Dt. Chegada" value={dataOpt(p.dataChegada)} onInfo={info("dataChegada")} />
+            <Field label="Nº DI" value={p.numeroDi} onInfo={info("numeroDi")} />
+            <Field label="Protocolo DI" value={p.protocoloDi} onInfo={info("protocoloDi")} />
+            <Field label="Dt. Registro" value={dataOpt(p.dataRegistro)} onInfo={info("dataRegistro")} />
+            <Field label="Canal" value={<CanalBadge canal={p.canal} showPrefix={false} />} onInfo={info("canal")} />
+            <Field label="Fiscal" value={p.fiscal} onInfo={info("fiscal")} />
+            <Field label="Dt. Desembaraço" value={dataOpt(p.dataDesembaraco)} onInfo={info("dataDesembaraco")} />
+            <Field label="Imposto Federal" value={moeda(p.impostoFederal)} onInfo={info("impostoFederal")} />
+            <Field label="ICMS" value={moeda(p.icms)} onInfo={info("icms")} />
+            <Field label="Vlr. AFRMM" value={moeda(p.valorAfrmm)} onInfo={info("valorAfrmm")} />
+          </div>
+          <div className="border-t border-slate-100 px-5 py-4">
+            <Field
+              label="Posição Atual (resumo automático)"
+              value={p.posicaoAtual || p.observacoes || "—"}
+              onInfo={info("posicaoAtual")}
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Carga · CE-Mercante · Siscomex"
+            subtitle="Consolidação oficial (Serpro Carga + Portal Único)"
+            icon={Container}
+          />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
+            <Field label="CNPJ do importador" value={p.cnpj} onInfo={info("cnpjImportador")} />
+            <Field label="CE-Mercante" value={p.ceMercante} onInfo={info("ceMercante")} />
+            <Field label="Manifesto" value={p.numeroManifesto} onInfo={info("manifesto")} />
+            <Field label="Escala" value={p.numeroEscala} onInfo={info("escala")} />
+            <Field label="Situação da carga" value={p.situacaoCarga} onInfo={info("situacaoCarga")} />
+            <Field
+              label="Bloqueio"
+              value={
+                p.cargaBloqueada ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20">
+                    <Lock className="h-3 w-3" /> Cadeado vermelho
+                  </span>
+                ) : (
+                  <span className="text-emerald-600">Sem bloqueio</span>
+                )
+              }
+              onInfo={info("bloqueio")}
+            />
+            <Field
+              label="Documento de despacho"
+              value={
+                p.tipoDeclaracao
+                  ? `${p.tipoDeclaracao} ${p.tipoDeclaracao === "DUIMP" ? p.numeroDuimp ?? "" : p.numeroDi ?? ""}`.trim()
+                  : "—"
+              }
+              onInfo={info("documentoDespacho")}
+            />
+            <Field label="Nº DUIMP" value={p.numeroDuimp} onInfo={info("numeroDuimp")} />
+            <Field label="Container" value={p.container} onInfo={info("containers")} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Comercial & logística" icon={Building2} />
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
             <Field label="Empresa" value={p.empresaNome} />
             <Field label="CNPJ" value={p.cnpj} />
             <Field label="Cliente" value={p.cliente} />
             <Field label="Responsável interno" value={p.responsavelInterno} />
             <Field label="Despachante" value={p.despachante} />
-            <Field label="Fornecedor" value={p.fornecedor} />
+            <Field label="Container" value={p.container} />
             <Field label="País de origem" value={p.paisOrigem} />
             <Field label="Porto de origem" value={p.portoOrigem} />
             <Field label="Porto de destino" value={p.portoDestino} />
-            <Field label="Navio / transportadora" value={p.navio} />
-            <Field label="BL / Conhecimento" value={p.bl} />
-            <Field label="Container" value={p.container} />
-            <Field label="Embarque (ETD)" value={formatDate(p.dataEmbarque)} />
-            <Field label="Chegada (ETA)" value={formatDate(p.dataChegada)} />
+            <Field label="Embarque (ETD)" value={dataOpt(p.dataEmbarque)} />
             <Field label="Valor FOB" value={formatCurrency(p.valorFob)} />
           </div>
-          {p.observacoes && (
-            <div className="border-t border-slate-100 px-5 py-4 text-sm text-slate-600">
-              {p.observacoes}
-            </div>
-          )}
         </Card>
       </div>
       <div className="space-y-6">
@@ -347,7 +477,15 @@ export function ProcessoDetail({ id }: { id: string }) {
                 : "Documentação completa. ") +
               `Previsão de chegada em ${formatDate(p.dataChegada)}. Qualquer dúvida, estamos à disposição.`}
           </div>
-          <button className="mt-3 flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700">
+          <button
+            onClick={() =>
+              toast({
+                title: "Mensagem enviada",
+                description: `Atualização do ${p.numeroInterno} publicada no grupo interno.`,
+              })
+            }
+            className="mt-3 flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+          >
             <Send className="h-4 w-4" /> Enviar para o grupo
           </button>
         </div>
@@ -367,18 +505,43 @@ export function ProcessoDetail({ id }: { id: string }) {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{p.numeroInterno}</h1>
             <StatusBadge status={p.status} />
           </div>
-          <p className="text-sm text-slate-500">
-            {p.empresaNome} · {p.cliente} · {p.bl} · {p.container}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <Link
+              href={`/empresas/${p.empresaId}`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-0.5 font-medium text-brand-700 transition hover:bg-brand-100"
+            >
+              <Building2 className="h-3.5 w-3.5" /> {p.empresaNome}
+            </Link>
+            <span className="text-slate-300">·</span>
+            <span>
+              Cliente <span className="text-slate-700">{p.cliente}</span>
+            </span>
+            <span className="text-slate-300">·</span>
+            <span>{p.cnpj}</span>
+            <span className="text-slate-300">·</span>
+            <span>{p.bl}</span>
+            <span className="text-slate-300">·</span>
+            <span>{p.container}</span>
+          </div>
         </div>
-        <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-          Etapa: {p.etapa}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {p.canal && <CanalBadge canal={p.canal} />}
+          <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
+            Etapa: {p.etapa}
+          </span>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+        </div>
       </div>
 
       <Tabs
         tabs={[
           { key: "geral", label: "Visão geral", icon: Eye, content: visaoGeral },
+          { key: "duimp", label: "DUIMP", icon: FileCheck2, content: <DuimpTab processoId={p.id} /> },
           { key: "docs", label: "Documentos", icon: FileText, content: documentosTab },
           { key: "carga", label: "Carga", icon: Container, content: cargaTab },
           { key: "fin", label: "Financeiro", icon: Wallet, content: financeiroTab },
@@ -386,6 +549,21 @@ export function ProcessoDetail({ id }: { id: string }) {
           { key: "hist", label: "Histórico", icon: History, content: historicoTab },
           { key: "ia", label: "IA", icon: Sparkles, content: iaTab },
         ]}
+      />
+
+      <ProcessoForm
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        initial={p}
+        onSubmit={(np) => {
+          updateProcesso(np);
+          toast({ title: "Processo atualizado", description: `${np.numeroInterno} salvo.` });
+        }}
+      />
+
+      <FonteDadoModal
+        fonte={fonteKey ? fontesDados[fonteKey] ?? null : null}
+        onClose={() => setFonteKey(null)}
       />
     </div>
   );

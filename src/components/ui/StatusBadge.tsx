@@ -52,6 +52,15 @@ const statusMap: Record<string, { label: string; tone: Tone }> = {
   // IRPF
   em_dia: { label: "Em dia", tone: "green" },
   em_elaboracao: { label: "Em elaboração", tone: "blue" },
+  // Integrações
+  conectado: { label: "Conectado", tone: "green" },
+  nao_configurado: { label: "Não configurado", tone: "slate" },
+  // Radar
+  habilitado: { label: "Habilitado", tone: "green" },
+  em_habilitacao: { label: "Em habilitação", tone: "blue" },
+  revisao: { label: "Em revisão", tone: "amber" },
+  suspenso: { label: "Suspenso", tone: "red" },
+  recebido: { label: "Recebido", tone: "blue" },
   // Severity / alerta
   critico: { label: "Crítico", tone: "red" },
   atencao: { label: "Atenção", tone: "amber" },

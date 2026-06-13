@@ -14,11 +14,13 @@ export function DataTable<T extends { id: string }>({
   columns,
   rows,
   onRowHref,
+  onRowClick,
   empty,
 }: {
   columns: Column<T>[];
   rows: T[];
   onRowHref?: (row: T) => string;
+  onRowClick?: (row: T) => void;
   empty?: React.ReactNode;
 }) {
   if (rows.length === 0 && empty) {
@@ -26,11 +28,11 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+    <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-card">
       <div className="overflow-x-auto scrollbar-thin">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/60">
+            <tr className="border-b border-slate-100 bg-slate-50/70">
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -49,19 +51,21 @@ export function DataTable<T extends { id: string }>({
           <tbody className="divide-y divide-slate-50">
             {rows.map((row) => {
               const href = onRowHref?.(row);
-              const RowTag = href ? "a" : "div";
+              const clickable = !!href || !!onRowClick;
               return (
                 <tr
                   key={row.id}
                   className={cn(
                     "transition-colors",
-                    href && "cursor-pointer hover:bg-slate-50/70"
+                    clickable && "cursor-pointer hover:bg-slate-50/70"
                   )}
                   onClick={
                     href
                       ? () => {
                           window.location.href = href;
                         }
+                      : onRowClick
+                      ? () => onRowClick(row)
                       : undefined
                   }
                 >

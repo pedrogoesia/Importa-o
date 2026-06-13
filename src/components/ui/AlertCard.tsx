@@ -19,7 +19,7 @@ export function AlertCard({ alerta }: { alerta: Alerta }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 border-l-4 bg-white p-4 shadow-card",
+        "rounded-2xl border border-slate-200/70 border-l-4 bg-white p-4 shadow-card",
         s.border
       )}
     >
