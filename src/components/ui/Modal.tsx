@@ -38,10 +38,10 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="animate-overlay-in absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="animate-overlay-in absolute inset-0 bg-slate-900/30 backdrop-blur-md"
         onClick={onClose}
       />
-      <div className="animate-modal-in relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card-hover">
+      <div className="animate-modal-in relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-card-hover">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-2.5">
             {Icon && (

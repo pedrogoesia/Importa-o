@@ -14,7 +14,7 @@ import { formatDate } from "@/lib/utils";
 export function DocumentCard({ documento }: { documento: Documento }) {
   const toast = useToast();
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card transition hover:shadow-card-hover">
+    <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
           <FileText className="h-5 w-5" />

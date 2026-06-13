@@ -95,9 +95,9 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/80 px-4 backdrop-blur lg:px-8">
+    <header className="glass sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/70 px-4 lg:px-8">
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-600 text-white">
           <Sparkles className="h-4 w-4" />
         </div>
         <span className="text-sm font-semibold text-slate-900">Escopo</span>
@@ -118,7 +118,7 @@ export function Topbar() {
             if (e.key === "Escape") setSearchOpen(false);
           }}
           placeholder="Buscar empresa, processo, BL ou container…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-full border border-slate-200/80 bg-white/70 py-2 pl-9 pr-8 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-brand-300 focus:bg-white focus:ring-4 focus:ring-brand-100/70"
         />
         {query && (
           <button
@@ -174,7 +174,7 @@ export function Topbar() {
       <div className="ml-auto flex items-center gap-2">
         <Link
           href="/ia"
-          className="hidden items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 sm:flex"
+          className="hidden items-center gap-2 rounded-full bg-brand-600 px-3.5 py-2 text-sm font-medium text-white shadow-card transition hover:bg-brand-700 active:scale-[0.98] sm:flex"
         >
           <Sparkles className="h-4 w-4" />
           Copiloto
@@ -184,7 +184,7 @@ export function Topbar() {
           <button
             onClick={() => setNotifOpen((o) => !o)}
             className={cn(
-              "relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50",
+              "relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/70 text-slate-500 transition hover:bg-slate-50",
               notifOpen && "bg-slate-50 text-slate-700"
             )}
             aria-label="Notificações"

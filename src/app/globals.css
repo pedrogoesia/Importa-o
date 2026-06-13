@@ -4,10 +4,20 @@
 
 @layer base {
   :root {
-    --background: 248 250 252;
+    --background: 245 245 247;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-canvas text-slate-800 antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tightest;
   }
 }
 
@@ -17,10 +27,16 @@
     height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-full;
+    @apply bg-slate-300/70 rounded-full;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     @apply bg-transparent;
+  }
+  /* Vidro translúcido estilo Apple */
+  .glass {
+    background-color: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
 }
 

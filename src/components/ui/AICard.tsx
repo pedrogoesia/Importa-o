@@ -17,7 +17,7 @@ export function AICard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-violet-50 p-5 shadow-card",
+        "relative overflow-hidden rounded-2xl border border-brand-100/70 bg-gradient-to-br from-brand-50 via-white to-sky-50 p-5 shadow-card",
         className
       )}
     >
@@ -25,7 +25,7 @@ export function AICard({
       <div className="relative">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-card">
               <Sparkles className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold text-slate-900">{title}</span>

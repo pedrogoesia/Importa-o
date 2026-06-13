@@ -17,7 +17,7 @@ export function ProcessCard({ processo }: { processo: Processo }) {
     <Link
       href={`/processos/${processo.id}`}
       className={cn(
-        "group block rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-brand-200 hover:shadow-card-hover",
+        "group block rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover",
         processo.canal && `border-l-4 ${canalBorder[processo.canal] ?? "border-l-slate-300"}`
       )}
     >

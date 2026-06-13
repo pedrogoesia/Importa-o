@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 bg-white shadow-card",
+        "rounded-2xl border border-slate-200/70 bg-white shadow-card",
         className
       )}
       {...props}
@@ -33,7 +33,7 @@ export function CardHeader({
     <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
       <div className="flex items-center gap-2.5">
         {Icon && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <Icon className="h-4 w-4" />
           </div>
         )}
